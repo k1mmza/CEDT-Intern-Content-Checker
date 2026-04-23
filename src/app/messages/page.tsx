@@ -1,0 +1,231 @@
+"use client";
+
+import { useUserStore } from "@/store/useUserStore";
+
+function InfluencerMessagesView() {
+  return (
+    <section className="space-y-6">
+      <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white shadow-sm">
+        <h1 className="text-2xl font-bold">Messages</h1>
+        <p className="mt-1 text-sm text-indigo-100">Manage active conversations, files, and campaign workflow in one place.</p>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[280px_1fr_280px]">
+        <aside className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">Conversations</h2>
+            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">3 unread</span>
+          </div>
+          <input
+            placeholder="Search brand or campaign"
+            className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          />
+          <div className="mt-3 flex gap-2 text-xs">
+            <span className="rounded-full bg-slate-900 px-2 py-1 font-semibold text-white">All</span>
+            <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-700">Unread</span>
+            <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-700">Active</span>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            {[
+              ["GlowLab", "Summer Skincare", "Need your draft by Friday", "2m", true],
+              ["FitBites", "Snack Challenge", "Looks good, please revise CTA", "1h", true],
+              ["Roamly", "Travel Light", "Payment completed", "Yesterday", false]
+            ].map(([brand, campaign, preview, time, unread]) => (
+              <div key={`${brand}-${campaign}`} className="rounded-xl border border-slate-200 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{brand}</p>
+                    <p className="text-xs text-slate-500">{campaign}</p>
+                  </div>
+                  <span className="text-xs text-slate-400">{time}</span>
+                </div>
+                <p className="mt-1 line-clamp-1 text-xs text-slate-600">{preview}</p>
+                {unread ? <span className="mt-2 inline-flex h-2.5 w-2.5 rounded-full bg-indigo-500" /> : null}
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        <article className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">GlowLab</p>
+              <p className="text-xs text-slate-500">Summer Skincare Campaign</p>
+            </div>
+            <span className="text-xs text-emerald-600">Online</span>
+          </div>
+
+          <div className="space-y-3 py-4">
+            <p className="text-center text-xs text-slate-400">Today</p>
+
+            <div className="max-w-[80%] rounded-2xl rounded-tl-md bg-slate-100 px-3 py-2 text-sm text-slate-700">
+              Hi Lina, can you submit the first draft by Friday 5 PM?
+              <p className="mt-1 text-[11px] text-slate-400">10:04</p>
+            </div>
+
+            <div className="ml-auto max-w-[80%] rounded-2xl rounded-tr-md bg-indigo-600 px-3 py-2 text-sm text-white">
+              Sure! I&apos;ll send the TikTok draft tomorrow for early review.
+              <p className="mt-1 text-[11px] text-indigo-200">10:07 • Seen</p>
+            </div>
+
+            <div className="max-w-[80%] rounded-2xl rounded-tl-md bg-slate-100 px-3 py-2 text-sm text-slate-700">
+              Great. I&apos;ve attached the updated brief and do/don&apos;t list.
+              <p className="mt-1 text-[11px] text-slate-400">10:08</p>
+            </div>
+
+            <div className="max-w-[70%] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+              📎 Updated_Brief_v2.pdf
+              <p className="text-[11px] text-slate-500">PDF • 1.2 MB</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+            <button className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white">Accept Brief</button>
+            <button className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">Submit Draft</button>
+            <button className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">Request Revision</button>
+            <button className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">Mark Completed</button>
+          </div>
+
+          <div className="mt-3 flex items-center gap-2">
+            <input placeholder="Type your message..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            <button className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Send</button>
+          </div>
+        </article>
+
+        <aside className="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Campaign Context</h2>
+            <ul className="mt-2 space-y-1 text-sm text-slate-600">
+              <li>Campaign: Summer Skincare</li>
+              <li>Budget: THB 8,000 - 10,000</li>
+              <li>Deadline: 30 May 2026</li>
+              <li>Contact: Kate (Brand Manager)</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">Deliverables</h3>
+            <ul className="mt-2 space-y-2 text-sm text-slate-600">
+              <li className="rounded-lg bg-slate-50 px-3 py-2">[x] 1 TikTok concept approved</li>
+              <li className="rounded-lg bg-slate-50 px-3 py-2">[ ] 1 TikTok draft upload</li>
+              <li className="rounded-lg bg-slate-50 px-3 py-2">[ ] 3 IG story frames</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">Suggested Replies</h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">Got it 👍</button>
+              <button className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">Will update soon</button>
+              <button className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">Can you clarify?</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+function BrandMessagesView() {
+  return (
+    <section className="space-y-6">
+      <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white shadow-sm">
+        <h1 className="text-2xl font-bold">Messages</h1>
+        <p className="mt-1 text-sm text-indigo-100">Chat with influencers, filter by campaign, and keep briefs in context.</p>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[280px_1fr_280px]">
+        <aside className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">Conversations</h2>
+            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">2 unread</span>
+          </div>
+          <input
+            placeholder="Search influencer or campaign"
+            className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          />
+          <div className="mt-3 flex gap-2 text-xs">
+            <span className="rounded-full bg-slate-900 px-2 py-1 font-semibold text-white">All</span>
+            <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-700">Unread</span>
+            <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-700">Active</span>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            {[
+              ["Lina Park", "Summer Skincare", "Uploading draft tomorrow AM", "5m", true],
+              ["Pat K.", "Healthy Snack", "CTA line updated in caption", "32m", true],
+              ["Nina V.", "Travel Light", "Thanks—closing this thread", "2d", false]
+            ].map(([name, campaign, preview, time, unread]) => (
+              <div key={`${name}-${campaign}`} className="rounded-xl border border-slate-200 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{name}</p>
+                    <p className="text-xs text-slate-500">{campaign}</p>
+                  </div>
+                  <span className="text-xs text-slate-400">{time}</span>
+                </div>
+                <p className="mt-1 line-clamp-1 text-xs text-slate-600">{preview}</p>
+                {unread ? <span className="mt-2 inline-flex h-2.5 w-2.5 rounded-full bg-indigo-500" /> : null}
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        <article className="rounded-2xl bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Lina Park</p>
+              <p className="text-xs text-slate-500">Summer Skincare Campaign</p>
+            </div>
+            <span className="text-xs text-emerald-600">Active</span>
+          </div>
+
+          <div className="space-y-3 py-4">
+            <p className="text-center text-xs text-slate-400">Today</p>
+
+            <div className="ml-auto max-w-[80%] rounded-2xl rounded-tr-md bg-indigo-600 px-3 py-2 text-sm text-white">
+              Hi Lina, can you submit the first draft by Friday 5 PM?
+              <p className="mt-1 text-[11px] text-indigo-200">10:04</p>
+            </div>
+
+            <div className="max-w-[80%] rounded-2xl rounded-tl-md bg-slate-100 px-3 py-2 text-sm text-slate-700">
+              Yes—sending the TikTok draft tomorrow morning for your review.
+              <p className="mt-1 text-[11px] text-slate-400">10:07</p>
+            </div>
+
+            <div className="ml-auto max-w-[80%] rounded-2xl rounded-tr-md bg-indigo-600 px-3 py-2 text-sm text-white">
+              Attached: updated brief + do/don&apos;t list. Ping me if anything is unclear.
+              <p className="mt-1 text-[11px] text-indigo-200">10:10</p>
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
+            <input placeholder="Type a message to influencer…" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            <button className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Send</button>
+          </div>
+        </article>
+
+        <aside className="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Filter</h2>
+            <p className="mt-1 text-sm text-slate-600">Campaign: Summer Skincare (demo)</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">Quick actions</h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white">Request revision</button>
+              <button className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">Approve post</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+export default function MessagesPage() {
+  const { role } = useUserStore();
+  if (role === "brand") return <BrandMessagesView />;
+  return <InfluencerMessagesView />;
+}

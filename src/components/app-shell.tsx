@@ -1,0 +1,35 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import { Navigation } from "@/components/navigation";
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isLandingPage = pathname === "/";
+  const isAuthPage = ["/login", "/register", "/forgot-password"].includes(pathname);
+
+  if (isAuthPage) {
+    return <main className="mx-auto min-h-screen max-w-6xl px-4 py-6">{children}</main>;
+  }
+
+  if (isLandingPage) {
+    return (
+      <main className="mx-auto min-h-screen max-w-6xl px-4 py-6">
+        <Navigation />
+        {children}
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen px-4 py-6 lg:px-6">
+      <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+        <aside>
+          <Navigation />
+          <div id="app-sidebar-slot" className="mt-4" />
+        </aside>
+        <section>{children}</section>
+      </div>
+    </main>
+  );
+}
