@@ -394,3 +394,50 @@ Data fields:
 - Clear CTA (Add / Apply / Chat)
 - Card-based UI
 - Simple navigation
+
+-----------------------------------------------------------------------------
+
+this text area on smart plan page is prompt text input  for command AI to planning marketing compaign
+we devide to 7 section of step guide bar
+- Requirement
+- Strategy
+- concept
+- brief
+- Influencer
+- Message
+- tracking
+
+step of process (create new campaign)
+- when entered smart plan page
+- prompt text to give requirement 
+- AI scan text and bring data to show on Requirement section 
+   - before type detail , type @Requirement first for Ai can know what section shoud working on
+   - requirement section inclue data below this
+      - name campaign
+      - objective
+      - product info
+      - target audience
+      - Brand Identity/tone
+      - Budget
+      - timeline
+      - KPI
+      - Do & Dont
+- if prompt text not cover all requirement , left blank fill on each data that not given
+- appaer step guide bar and move text area to bottom of desktop
+- AI use requirement data and generate suggest content on each section
+  - strategy , concept , influencer, brief
+- user can change requirement data via text area prompting with @requirement or change direct on Requirement section and click save on that. that logic cover strategy, concept, brief, influencer as well
+- On section influencer can export excel file or share link about list of influencer that user choose
+- On section influencer display influencer card and have two button add to list , message
+  - when click add to list influencer card move to list 
+  - when click message, appear chat box with influencer on messages section
+ - On messages box have extra button for send influencer work when influencer use this (send URL) system use URL for tracking result on tracking section
+- On tracking section can share result by link or pdf file
+
+step of see campaign
+- click my Campaign button
+- display table of list campaign inclue
+  - name of campaign , status, budget, range time of campaign, reslut, see detail (CTA)
+- when click see detail, display same step of process but already have data
+
+-------------------------------------------------------------------------------

@@ -4,9 +4,10 @@ import { usePathname } from "next/navigation";
 import { Navigation } from "@/components/navigation";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const isLandingPage = pathname === "/";
   const isAuthPage = ["/login", "/register", "/forgot-password"].includes(pathname);
+  const isSmartPlanPage = pathname === "/smart-plan" || pathname.startsWith("/smart-plan/");
 
   if (isAuthPage) {
     return <main className="mx-auto min-h-screen max-w-6xl px-4 py-6">{children}</main>;
@@ -19,6 +20,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
     );
+  }
+
+  if (isSmartPlanPage) {
+    return <main className="min-h-screen bg-white px-4 py-6 lg:px-6">{children}</main>;
   }
 
   return (

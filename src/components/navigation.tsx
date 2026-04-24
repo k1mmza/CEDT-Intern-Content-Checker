@@ -10,6 +10,7 @@ const brandLinks = [
   { href: "/campaigns", label: "Campaign" },
   { href: "/discover", label: "Discover" },
   { href: "/smart-advisor", label: "Smart Advisor" },
+  { href: "/smart-plan", label: "Smart Plan" },
   { href: "/messages", label: "Message" },
   { href: "/tracking", label: "Tracking" },
   { href: "/profile", label: "Profile" }
