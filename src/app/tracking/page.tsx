@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { useEffect } from "react";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -8,7 +9,7 @@ import { useUserStore } from "@/store/useUserStore";
 import { brandCampaigns, trackingByCampaign } from "@/mock/brand-campaigns";
 import { exportRowsToExcel } from "@/lib/excel";
 
-export default function TrackingPage() {
+function TrackingPageContent() {
   const { role } = useUserStore();
   const searchParams = useSearchParams();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -193,5 +194,13 @@ export default function TrackingPage() {
         </article>
       )}
     </section>
+  );
+}
+
+export default function TrackingPage() {
+  return (
+    <Suspense fallback={<section className="space-y-4 text-slate-600">Loading tracking data...</section>}>
+      <TrackingPageContent />
+    </Suspense>
   );
 }
