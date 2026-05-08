@@ -28,6 +28,7 @@ type Campaign = {
   budget: string;
   timeRange: string;
   result: string;
+  requirement: RequirementData;
 };
 
 const stepBar: { id: StepId; label: string }[] = [
@@ -51,6 +52,7 @@ const requirementFields: { key: keyof RequirementData; label: string }[] = [
 ];
 
 type BriefSubSection = "strategy" | "concept" | "briefBody";
+type StartMode = "none" | "prompt" | "aiQuestion";
 
 const sectionAlias: Record<string, StepId | BriefSubSection> = {
   requirement: "requirement",
@@ -64,9 +66,91 @@ const sectionAlias: Record<string, StepId | BriefSubSection> = {
 };
 
 const myCampaignSeed: Campaign[] = [
-  { id: "cmp-1", name: "Glow Summer Launch", status: "Active", budget: "$12,000", timeRange: "Jun 1 - Jul 15", result: "78% KPI hit" },
-  { id: "cmp-2", name: "Fit Habit Challenge", status: "Draft", budget: "$8,500", timeRange: "May 10 - Jun 20", result: "Pending" },
+  {
+    id: "cmp-1",
+    name: "Glow Summer Launch",
+    status: "Active",
+    budget: "$12,000",
+    timeRange: "Jun 1 - Jul 15",
+    result: "78% KPI hit",
+    requirement: {
+      campaignName: "Glow Summer Launch",
+      objective: "Drive awareness and first purchase for summer skincare line",
+      contentAngle: "Before/after glow routine with creator storytelling",
+      productInfo: "Vitamin C serum and SPF bundle",
+      productLinkOrWebsite: "https://glow.example.com/summer",
+      ctaMessage: "Shop the summer glow set now",
+      targetAudience: "Women 20-35 in urban areas",
+      brandTone: "Confident, fresh, and uplifting",
+      budget: "$12,000",
+      timeline: "Jun 1 - Jul 15",
+      kpi: "Reach 2M, CTR 2.5%, 1,000 purchases",
+      doDont: "Do: show routine steps. Dont: overclaim product effect.",
+    },
+  },
+  {
+    id: "cmp-2",
+    name: "Fit Habit Challenge",
+    status: "Draft",
+    budget: "$8,500",
+    timeRange: "May 10 - Jun 20",
+    result: "Pending",
+    requirement: {
+      campaignName: "Fit Habit Challenge",
+      objective: "Get signups for 30-day fitness challenge",
+      contentAngle: "Daily progress check-ins and accountability",
+      productInfo: "Challenge app + coaching plan",
+      productLinkOrWebsite: "https://fit.example.com/challenge",
+      ctaMessage: "Join the challenge today",
+      targetAudience: "Young professionals 22-40",
+      brandTone: "Motivational and supportive",
+      budget: "$8,500",
+      timeline: "May 10 - Jun 20",
+      kpi: "1,500 signups and 8% conversion",
+      doDont: "Do: realistic goals. Dont: shame-based messaging.",
+    },
+  },
 ];
+
+const aiQuestionSet: { key: keyof RequirementData; question: string; placeholder: string }[] = [
+  { key: "campaignName", question: "What is your campaign name?", placeholder: "e.g. Glow Summer Launch" },
+  { key: "objective", question: "What is the main campaign objective?", placeholder: "e.g. Increase sales by 20%" },
+  { key: "targetAudience", question: "Who is your target audience?", placeholder: "e.g. Women 20-35 in Bangkok" },
+  { key: "productInfo", question: "What product or service will be promoted?", placeholder: "e.g. Vitamin C serum bundle" },
+  { key: "contentAngle", question: "What content angle should creators use?", placeholder: "e.g. Before/after routine story" },
+  { key: "brandTone", question: "What brand tone should creators follow?", placeholder: "e.g. Friendly and trustworthy" },
+  { key: "ctaMessage", question: "What CTA message should be used?", placeholder: "e.g. Shop now via link in bio" },
+  { key: "productLinkOrWebsite", question: "What is the product link or website?", placeholder: "https://..." },
+  { key: "budget", question: "What is your budget?", placeholder: "e.g. $10,000" },
+  { key: "timeline", question: "What is your campaign timeline?", placeholder: "e.g. Jun 1 - Jul 15" },
+  { key: "kpi", question: "What KPI are you targeting?", placeholder: "e.g. Reach 2M, CTR 2%" },
+  { key: "doDont", question: "Any do and dont rules for creators?", placeholder: "e.g. Do: show usage. Dont: make medical claims." },
+];
+
+function toBriefTemplate(data: RequirementData) {
+  const campaignTitle = data.campaignName || "Selected Campaign";
+  return {
+    strategy: [
+      `Campaign: ${campaignTitle}`,
+      `Objective: ${data.objective || "-"}`,
+      `Target Audience: ${data.targetAudience || "-"}`,
+      `Budget: ${data.budget || "-"}`,
+      `Timeline: ${data.timeline || "-"}`,
+      `KPI: ${data.kpi || "-"}`,
+    ].join("\n"),
+    concept: [
+      `Main Concept: ${data.contentAngle || "-"}`,
+      `Product Focus: ${data.productInfo || "-"}`,
+      `Brand Tone: ${data.brandTone || "-"}`,
+    ].join("\n"),
+    briefBody: [
+      `Creative Brief - ${campaignTitle}`,
+      `Product Link: ${data.productLinkOrWebsite || "-"}`,
+      `CTA: ${data.ctaMessage || "-"}`,
+      `Do & Dont: ${data.doDont || "-"}`,
+    ].join("\n"),
+  };
+}
 
 function parseRequirementText(text: string): Partial<RequirementData> {
   const clean = text.toLowerCase();
@@ -100,8 +184,10 @@ export default function SmartPlanPage() {
   const [activeStep, setActiveStep] = useState<StepId>("requirement");
   const [hasStarted, setHasStarted] = useState(false);
   const [isPlannerVisible, setIsPlannerVisible] = useState(false);
+  const [startMode, setStartMode] = useState<StartMode>("none");
   const [viewMode, setViewMode] = useState<"create" | "list" | "detail">("create");
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [isBriefCampaignPickerOpen, setIsBriefCampaignPickerOpen] = useState(false);
   const [requirements, setRequirements] = useState<RequirementData>({
     campaignName: "",
     objective: "",
@@ -119,6 +205,21 @@ export default function SmartPlanPage() {
   const [strategyText, setStrategyText] = useState("");
   const [conceptText, setConceptText] = useState("");
   const [briefText, setBriefText] = useState("");
+  const [aiQuestionIndex, setAiQuestionIndex] = useState(0);
+  const [aiAnswers, setAiAnswers] = useState<RequirementData>({
+    campaignName: "",
+    objective: "",
+    contentAngle: "",
+    productInfo: "",
+    productLinkOrWebsite: "",
+    ctaMessage: "",
+    targetAudience: "",
+    brandTone: "",
+    budget: "",
+    timeline: "",
+    kpi: "",
+    doDont: "",
+  });
 
   const promptHint = useMemo(() => {
     return hasStarted
@@ -186,7 +287,34 @@ export default function SmartPlanPage() {
     setRequirements((prev) => ({ ...prev, [field]: value }));
   };
 
-  if (role === "influencer") {
+  const applyCampaignRequirementToBrief = (campaign: Campaign | null) => {
+    if (!campaign) return;
+    setSelectedCampaign(campaign);
+    setRequirements(campaign.requirement);
+    const template = toBriefTemplate(campaign.requirement);
+    setStrategyText(template.strategy);
+    setConceptText(template.concept);
+    setBriefText(template.briefBody);
+  };
+
+  const currentAiQuestion = aiQuestionSet[aiQuestionIndex];
+
+  const updateAiAnswer = (value: string) => {
+    setAiAnswers((prev) => ({ ...prev, [currentAiQuestion.key]: value }));
+  };
+
+  const finishAiQuestionFlow = () => {
+    setRequirements(aiAnswers);
+    const template = toBriefTemplate(aiAnswers);
+    setStrategyText(template.strategy);
+    setConceptText(template.concept);
+    setBriefText(template.briefBody);
+    setHasStarted(true);
+    setIsPlannerVisible(true);
+    setActiveStep("requirement");
+  };
+
+  if (role !== "brand" && role !== "agency") {
     return (
       <section className="p-6">
         <h1 className="text-2xl font-bold text-slate-900">Smart Plan</h1>
@@ -248,7 +376,7 @@ export default function SmartPlanPage() {
                       <button
                         type="button"
                         onClick={() => {
-                          setSelectedCampaign(campaign);
+                          applyCampaignRequirementToBrief(campaign);
                           setViewMode("detail");
                         }}
                         className="rounded-lg border border-indigo-300 px-3 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50"
@@ -266,39 +394,127 @@ export default function SmartPlanPage() {
 
       {viewMode === "create" && !isPlannerVisible && (
         <div className="mx-auto w-full max-w-3xl rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <label htmlFor="smart-plan-input" className="mb-2 block text-sm font-medium text-slate-700">
-            AI Prompt Command
-          </label>
-          <textarea
-            id="smart-plan-input"
-            rows={9}
-            value={promptInput}
-            onChange={(event) => setPromptInput(event.target.value)}
-            placeholder={promptHint}
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-          />
-          <div className="mt-4 flex items-center justify-end gap-3">
+          <div className="mb-4 flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => setViewMode("list")}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              onClick={() => setStartMode("prompt")}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                startMode === "prompt" ? "bg-indigo-600 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-100"
+              }`}
             >
-              My Campaign
+              Prompt command
             </button>
             <button
               type="button"
-              onClick={() => {
-                if (applyPromptText(promptInput)) {
-                  setPromptInput("");
-                  return;
-                }
-                setIsPlannerVisible(true);
-              }}
-              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+              onClick={() => setStartMode("aiQuestion")}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                startMode === "aiQuestion" ? "bg-indigo-600 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-100"
+              }`}
             >
-              Create Campaign
+              AI asks questions
             </button>
           </div>
+
+          {startMode === "none" && (
+            <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+              Choose how to start Smart Plan: use a prompt command or let AI ask campaign questions.
+            </p>
+          )}
+
+          {startMode === "prompt" && (
+            <>
+              <label htmlFor="smart-plan-input" className="mb-2 block text-sm font-medium text-slate-700">
+                AI Prompt Command
+              </label>
+              <textarea
+                id="smart-plan-input"
+                rows={9}
+                value={promptInput}
+                onChange={(event) => setPromptInput(event.target.value)}
+                placeholder={promptHint}
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              />
+              <div className="mt-4 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  My Campaign
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (applyPromptText(promptInput)) {
+                      setPromptInput("");
+                      return;
+                    }
+                    setIsPlannerVisible(true);
+                  }}
+                  className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                >
+                  Create Campaign
+                </button>
+              </div>
+            </>
+          )}
+
+          {startMode === "aiQuestion" && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-medium text-slate-500">
+                  Question {aiQuestionIndex + 1} of {aiQuestionSet.length}
+                </p>
+                <label htmlFor="ai-question-input" className="mt-1 block text-sm font-medium text-slate-700">
+                  {currentAiQuestion.question}
+                </label>
+              </div>
+              <textarea
+                id="ai-question-input"
+                rows={4}
+                value={aiAnswers[currentAiQuestion.key]}
+                onChange={(event) => updateAiAnswer(event.target.value)}
+                placeholder={currentAiQuestion.placeholder}
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              />
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("list")}
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  My Campaign
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAiQuestionIndex((prev) => Math.max(0, prev - 1))}
+                    disabled={aiQuestionIndex === 0}
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition enabled:hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Back
+                  </button>
+                  {aiQuestionIndex < aiQuestionSet.length - 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => setAiQuestionIndex((prev) => Math.min(aiQuestionSet.length - 1, prev + 1))}
+                      className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                    >
+                      Next Question
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={finishAiQuestionFlow}
+                      className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                    >
+                      Generate Smart Plan
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -355,6 +571,54 @@ export default function SmartPlanPage() {
             <div className="space-y-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <h2 className="text-base font-semibold text-slate-900">Brief</h2>
               <p className="text-xs text-slate-500">Strategy, concept, and creative brief live in one place for creators and stakeholders.</p>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs text-slate-600">
+                  {selectedCampaign ? (
+                    <>
+                      Selected campaign: <span className="font-semibold text-slate-800">{selectedCampaign.name}</span>
+                    </>
+                  ) : (
+                    "No campaign selected"
+                  )}
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsBriefCampaignPickerOpen(true)}
+                    className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                  >
+                    Select campaign
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsBriefCampaignPickerOpen(false)}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+
+              {isBriefCampaignPickerOpen && (
+                <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
+                  <p className="text-xs font-medium text-slate-600">Choose campaign</p>
+                  {myCampaignSeed.map((campaign) => (
+                    <button
+                      key={campaign.id}
+                      type="button"
+                      onClick={() => {
+                        applyCampaignRequirementToBrief(campaign);
+                        setIsBriefCampaignPickerOpen(false);
+                      }}
+                      className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-left text-sm text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50"
+                    >
+                      <span>{campaign.name}</span>
+                      <span className="text-xs text-slate-500">{campaign.status}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <div className="space-y-2">
                 <span className="block text-xs font-medium text-slate-600">Strategy</span>

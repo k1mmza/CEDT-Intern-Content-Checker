@@ -44,6 +44,22 @@ export function WorkStatusDot({ phase }: { phase: WorkPhase }) {
 }
 
 type DraftRow = { id: string; name: string; version: string; status: string; updated: string; notes: string };
+type BriefCampaign = {
+  id: string;
+  name: string;
+  objective: string;
+  targetAudience: string;
+  contentAngle: string;
+  productInfo: string;
+  productLink: string;
+  ctaMessage: string;
+  brandTone: string;
+  budget: string;
+  timeline: string;
+  kpi: string;
+  keyMessages: string;
+  doDont: string;
+};
 
 type ProcessVariant = "influencer" | "brand";
 
@@ -92,6 +108,41 @@ const initialDrafts: DraftRow[] = [
   { id: "2", name: "TikTok full cut", version: "v0.9", status: "Draft", updated: "3 May 2026", notes: "Awaiting CTA line from brand." },
 ];
 
+const briefCampaignSeed: BriefCampaign[] = [
+  {
+    id: "summer-skincare",
+    name: "Summer Skincare",
+    objective: "Awareness + trial sign-ups.",
+    targetAudience: "Women 20-35 interested in skincare and wellness.",
+    contentAngle: "Daily skin routine with before/after storytelling.",
+    productInfo: "Gentle cleanser, vitamin serum, and SPF50 day cream.",
+    productLink: "https://example.com/summer-skincare",
+    ctaMessage: "Try the Summer Skincare set now.",
+    brandTone: "Confident, educational, and friendly.",
+    budget: "THB 120,000",
+    timeline: "1 Jun - 31 Jul 2026",
+    kpi: "2M reach, 3% CTR, 1,200 trial sign-ups.",
+    keyMessages: "Gentle routine, SPF daily, dermatologist-tested.",
+    doDont: "No medical claims; show product label clearly.",
+  },
+  {
+    id: "fit-habit",
+    name: "Fit Habit Challenge",
+    objective: "Drive challenge registration and app downloads.",
+    targetAudience: "Office workers 22-40 who want sustainable fitness habits.",
+    contentAngle: "30-day challenge journey with realistic progress updates.",
+    productInfo: "Fitness app subscription + guided challenge plan.",
+    productLink: "https://example.com/fit-habit",
+    ctaMessage: "Join the 30-day Fit Habit challenge.",
+    brandTone: "Motivational, supportive, and practical.",
+    budget: "THB 85,000",
+    timeline: "10 May - 20 Jun 2026",
+    kpi: "1,500 registrations, 900 app installs.",
+    keyMessages: "30-day routine, achievable progress, coach-backed tips.",
+    doDont: "No body-shaming; avoid unrealistic transformation claims.",
+  },
+];
+
 export function ProcessOfWorkPanel({ variant }: { variant: ProcessVariant }) {
   const [active, setActive] = useState<WorkPhase | null>(null);
   const [drafts, setDrafts] = useState<DraftRow[]>(initialDrafts);
@@ -100,6 +151,7 @@ export function ProcessOfWorkPanel({ variant }: { variant: ProcessVariant }) {
   const [workLink, setWorkLink] = useState("https://tiktok.com/@demo/video/000");
   const [brandComments, setBrandComments] = useState<Record<string, string[]>>({ "1": ["Strong open—tighten CTA at end."] });
   const [commentInput, setCommentInput] = useState("");
+  const [selectedBriefCampaignId, setSelectedBriefCampaignId] = useState<string>(briefCampaignSeed[0].id);
 
   const close = useCallback(() => setActive(null), []);
 
@@ -136,6 +188,11 @@ export function ProcessOfWorkPanel({ variant }: { variant: ProcessVariant }) {
         { id: "payment" as const, label: "Payment", hint: "Details & evidence" },
       ],
     [variant]
+  );
+
+  const selectedBriefCampaign = useMemo(
+    () => briefCampaignSeed.find((campaign) => campaign.id === selectedBriefCampaignId) ?? null,
+    [selectedBriefCampaignId]
   );
 
   return (
@@ -177,29 +234,115 @@ export function ProcessOfWorkPanel({ variant }: { variant: ProcessVariant }) {
       </Modal>
 
       <Modal open={active === "brief"} title="Brief" onClose={close}>
-        <div className="space-y-2 text-sm text-slate-600">
-          <p>
-            <span className="font-semibold text-slate-800">Campaign:</span> Summer Skincare
-          </p>
-          <p>
-            <span className="font-semibold text-slate-800">Objective:</span> Awareness + trial sign-ups.
-          </p>
-          <p>
-            <span className="font-semibold text-slate-800">Key messages:</span> Gentle routine, SPF daily, dermatologist-tested.
-          </p>
-          <p>
-            <span className="font-semibold text-slate-800">Do / Don&apos;t:</span> No medical claims; show product label clearly.
-          </p>
+        <div className="space-y-4">
+          <div className="rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-sky-50 p-4">
+            <label htmlFor="brief-campaign-select" className="block text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Select campaign
+            </label>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <select
+                id="brief-campaign-select"
+                value={selectedBriefCampaignId}
+                onChange={(event) => setSelectedBriefCampaignId(event.target.value)}
+                className="min-w-[220px] flex-1 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              >
+                <option value="">No campaign selected</option>
+                {briefCampaignSeed.map((campaign) => (
+                  <option key={campaign.id} value={campaign.id}>
+                    {campaign.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setSelectedBriefCampaignId("")}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                Cancel campaign
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Brief overview</p>
+                <h4 className="text-base font-semibold text-slate-900">{selectedBriefCampaign?.name ?? "No campaign selected"}</h4>
+              </div>
+              {selectedBriefCampaign ? (
+                <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">Requirement-linked</span>
+              ) : null}
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
+              <p className="text-slate-600">
+                <span className="font-semibold text-slate-800">Objective:</span> {selectedBriefCampaign?.objective ?? "-"}
+              </p>
+              <p className="text-slate-600">
+                <span className="font-semibold text-slate-800">Target audience:</span> {selectedBriefCampaign?.targetAudience ?? "-"}
+              </p>
+              <p className="text-slate-600">
+                <span className="font-semibold text-slate-800">Content angle:</span> {selectedBriefCampaign?.contentAngle ?? "-"}
+              </p>
+              <p className="text-slate-600">
+                <span className="font-semibold text-slate-800">Brand tone:</span> {selectedBriefCampaign?.brandTone ?? "-"}
+              </p>
+              <p className="text-slate-600">
+                <span className="font-semibold text-slate-800">Budget:</span> {selectedBriefCampaign?.budget ?? "-"}
+              </p>
+              <p className="text-slate-600">
+                <span className="font-semibold text-slate-800">Timeline:</span> {selectedBriefCampaign?.timeline ?? "-"}
+              </p>
+              <p className="text-slate-600 sm:col-span-2">
+                <span className="font-semibold text-slate-800">KPI:</span> {selectedBriefCampaign?.kpi ?? "-"}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Requirement details</p>
+            <div className="mt-3 space-y-2 text-sm text-slate-600">
+              <p>
+                <span className="font-semibold text-slate-800">Product info:</span> {selectedBriefCampaign?.productInfo ?? "-"}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-800">Product link:</span>{" "}
+                {selectedBriefCampaign?.productLink ? (
+                  <a
+                    href={selectedBriefCampaign.productLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium text-indigo-600 hover:underline"
+                  >
+                    {selectedBriefCampaign.productLink}
+                  </a>
+                ) : (
+                  "-"
+                )}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-800">CTA:</span> {selectedBriefCampaign?.ctaMessage ?? "-"}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-800">Key messages:</span> {selectedBriefCampaign?.keyMessages ?? "-"}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-800">Do / Don&apos;t:</span> {selectedBriefCampaign?.doDont ?? "-"}
+              </p>
+            </div>
+          </div>
         </div>
         {variant === "brand" ? (
           <>
-            <label className="mt-4 block text-xs font-semibold text-slate-700">Upload brief (PDF / doc)</label>
-            <input type="file" className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-indigo-700" />
+            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Upload brief (PDF / doc)</label>
+              <input type="file" className="mt-2 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-indigo-700" />
+            </div>
           </>
         ) : null}
         <button
           type="button"
-          className="mt-4 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          className="mt-4 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
           onClick={() => downloadBlob("campaign-brief.txt", "Full brief export (demo).")}
         >
           Download brief
