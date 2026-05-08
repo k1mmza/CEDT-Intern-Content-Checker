@@ -1,3 +1,4 @@
+import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
 import { Influencer } from "@/lib/types";
 
 interface InfluencerCardProps {
@@ -8,6 +9,7 @@ interface InfluencerCardProps {
 
 export function InfluencerCard({ influencer, isActive = false, onSelect }: InfluencerCardProps) {
   const avatarUrl = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
+  const main = getMainFollowerPlatform(influencer);
 
   return (
     <article
@@ -33,6 +35,9 @@ export function InfluencerCard({ influencer, isActive = false, onSelect }: Influ
             <div className="min-w-0">
               <h3 className="truncate text-lg font-semibold text-white">{influencer.name}</h3>
               <p className="mt-0.5 text-sm text-slate-100">{influencer.category}</p>
+              <p className="mt-1 truncate text-xs font-medium text-emerald-100">
+                Main audience: {main.platform} · {main.followers.toLocaleString()} followers
+              </p>
             </div>
             <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-indigo-700">
               Score {influencer.performanceScore}
@@ -67,7 +72,7 @@ export function InfluencerCard({ influencer, isActive = false, onSelect }: Influ
       <div className="space-y-4 px-4 pb-4">
         <div className="grid grid-cols-3 gap-2 text-sm">
           <div className="rounded-xl bg-slate-50 p-2.5">
-            <p className="text-slate-500">Followers</p>
+            <p className="text-slate-500">Total reach</p>
             <p className="font-semibold text-slate-900">{influencer.followers.toLocaleString()}</p>
           </div>
           <div className="rounded-xl bg-slate-50 p-2.5">

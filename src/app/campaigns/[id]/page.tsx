@@ -3,30 +3,51 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import { CampaignPartnerReviews } from "@/components/CampaignPartnerReviews";
+import { resolveBrandCampaignId } from "@/lib/campaign-id-bridge";
 import { useUserStore } from "@/store/useUserStore";
+import { useCampaignCollaborationStore } from "@/store/useCampaignCollaborationStore";
 import { brandCampaigns, trackingByCampaign } from "@/mock/brand-campaigns";
+import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
 import { influencers } from "@/mock/influencers";
 import { exportRowsToExcel } from "@/lib/excel";
 
 export default function CampaignDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { role } = useUserStore();
+  const { role, name: accountDisplayName } = useUserStore();
   const [shareMessage, setShareMessage] = useState("");
-  const brandCampaign = brandCampaigns.find((c) => c.id === id);
+
+  const bridgeId = resolveBrandCampaignId(id);
+  const brandCampaign = brandCampaigns.find((c) => c.id === bridgeId);
+  const collaborations = useCampaignCollaborationStore((s) => s.collaborations);
+  const recordCampaignFinished = useCampaignCollaborationStore((s) => s.recordCampaignFinished);
+
+  const isCampaignFinished =
+    !!brandCampaign &&
+    (brandCampaign.status === "completed" || collaborations.some((c) => c.campaignId === brandCampaign.id));
+
   const canManageCampaign = role === "brand" || role === "agency";
 
   const influencerRows = useMemo(
     () =>
       influencers.map((influencer, index) => {
-        const primaryPlatform = influencer.platforms[0] ?? "Instagram";
+        const { platform: primaryPlatform, followers: platformFollowers } = getMainFollowerPlatform(influencer);
         const socialHandle = influencer.name.toLowerCase().replace(/\s+/g, "");
-        const socialMediaLink = `https://www.${primaryPlatform.toLowerCase()}.com/${socialHandle}`;
+        const host =
+          primaryPlatform === "YouTube"
+            ? "youtube.com"
+            : primaryPlatform === "TikTok"
+              ? "tiktok.com"
+              : primaryPlatform === "Instagram"
+                ? "instagram.com"
+                : `${primaryPlatform.toLowerCase()}.com`;
+        const socialMediaLink = `https://www.${host}/@${socialHandle}`;
         return {
           marker: index + 1,
           kolName: influencer.name,
           socialMediaLink,
           platform: primaryPlatform,
-          platformFollowers: influencer.followers,
+          platformFollowers,
           category: influencer.category,
           estimateView: Math.round(influencer.followers * 0.35),
           engagementRate: influencer.engagementRate,
@@ -37,11 +58,12 @@ export default function CampaignDetailPage() {
   );
 
   const copyShareLink = async () => {
-    const shareUrl = typeof window === "undefined" ? "" : window.location.href;
+    const shareUrl =
+      typeof window === "undefined" ? "" : `${window.location.origin}/campaigns/${bridgeId}/share`;
     if (!shareUrl) return;
     try {
       await navigator.clipboard.writeText(shareUrl);
-      setShareMessage("Campaign link copied.");
+      setShareMessage("Client share link copied.");
     } catch {
       setShareMessage("Unable to copy automatically. Please copy from browser URL.");
     }
@@ -49,7 +71,7 @@ export default function CampaignDetailPage() {
 
   const exportInfluencersExcel = () => {
     exportRowsToExcel({
-      filename: `campaign-${id}-influencers.xls`,
+      filename: `campaign-${bridgeId}-influencers.xls`,
       sheetName: "Influencer List",
       headers: [
         "Marker",
@@ -77,6 +99,79 @@ export default function CampaignDetailPage() {
     setShareMessage("Influencer list exported to Excel.");
   };
 
+  const markCampaignFinished = () => {
+    if (!brandCampaign) return;
+    recordCampaignFinished({
+      campaignId: brandCampaign.id,
+      campaignName: brandCampaign.name,
+      currentRole: role,
+      currentDisplayName: accountDisplayName
+    });
+    setShareMessage("Campaign marked finished. Please submit partner reviews below.");
+  };
+
+  if (role === "influencer" && brandCampaign) {
+    const displayStatus = isCampaignFinished ? "completed" : brandCampaign.status;
+    return (
+      <section className="space-y-6">
+        <article className="rounded-2xl bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">{brandCampaign.name}</h1>
+              <p className="mt-1 text-sm text-slate-600">Influencer view — same job as brand/agency list (linked IDs).</p>
+            </div>
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                displayStatus === "active"
+                  ? "bg-emerald-100 text-emerald-800"
+                  : displayStatus === "pending"
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-slate-100 text-slate-600"
+              }`}
+            >
+              {displayStatus}
+            </span>
+          </div>
+          <div className="mt-4 grid gap-1 text-sm text-slate-600 sm:grid-cols-2">
+            <p>Objective: {brandCampaign.objective}</p>
+            <p>Platform: {brandCampaign.platform}</p>
+            <p>Budget: THB {brandCampaign.budget.toLocaleString()}</p>
+            <p>Deadline: {brandCampaign.deadline}</p>
+          </div>
+          {!isCampaignFinished ? (
+            <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+              <p className="text-sm font-medium text-indigo-900">Wrap up this campaign</p>
+              <p className="mt-1 text-xs text-indigo-800">
+                When deliverables are done, mark finished so you and partners can leave required ratings.
+              </p>
+              <button
+                type="button"
+                onClick={markCampaignFinished}
+                className="mt-3 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+              >
+                Mark campaign as finished
+              </button>
+              {shareMessage ? <p className="mt-2 text-xs font-medium text-emerald-700">{shareMessage}</p> : null}
+            </div>
+          ) : null}
+        </article>
+
+        {isCampaignFinished && brandCampaign ? (
+          <CampaignPartnerReviews
+            campaignId={brandCampaign.id}
+            campaignName={brandCampaign.name}
+            currentRole={role}
+            currentDisplayName={accountDisplayName}
+          />
+        ) : null}
+
+        <Link href="/campaigns" className="inline-flex rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">
+          Back to campaigns
+        </Link>
+      </section>
+    );
+  }
+
   if (canManageCampaign && !brandCampaign) {
     return (
       <section className="space-y-4">
@@ -90,7 +185,8 @@ export default function CampaignDetailPage() {
   }
 
   if (canManageCampaign && brandCampaign) {
-    const rows = trackingByCampaign[id] ?? [];
+    const rows = trackingByCampaign[bridgeId] ?? [];
+    const displayStatus = isCampaignFinished ? "completed" : brandCampaign.status;
 
     return (
       <section className="space-y-6">
@@ -103,14 +199,14 @@ export default function CampaignDetailPage() {
             <div className="flex flex-wrap gap-2">
               <span
                 className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                  brandCampaign.status === "active"
+                  displayStatus === "active"
                     ? "bg-emerald-100 text-emerald-800"
-                    : brandCampaign.status === "pending"
+                    : displayStatus === "pending"
                       ? "bg-amber-100 text-amber-800"
                       : "bg-slate-100 text-slate-600"
                 }`}
               >
-                {brandCampaign.status}
+                {displayStatus}
               </span>
               <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
                 {brandCampaign.visibility === "public" ? "Public" : "Private"}
@@ -125,6 +221,25 @@ export default function CampaignDetailPage() {
             <p>Deadline: {brandCampaign.deadline}</p>
             <p>Influencers joined: {brandCampaign.influencersJoined}</p>
           </div>
+          {!isCampaignFinished ? (
+            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-amber-900">Finish campaign</p>
+                <p className="mt-1 text-xs text-amber-800">
+                  Mark complete when work is done. Brand, agency, and influencers can then rate each other for this
+                  campaign name.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={markCampaignFinished}
+                className="shrink-0 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700"
+              >
+                Mark as finished
+              </button>
+            </div>
+          ) : null}
+          {shareMessage ? <p className="mt-3 text-xs font-medium text-emerald-700">{shareMessage}</p> : null}
         </article>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -168,19 +283,39 @@ export default function CampaignDetailPage() {
           </article>
         </div>
 
+        {isCampaignFinished ? (
+          <CampaignPartnerReviews
+            campaignId={brandCampaign.id}
+            campaignName={brandCampaign.name}
+            currentRole={role}
+            currentDisplayName={accountDisplayName}
+          />
+        ) : null}
+
         <article className="rounded-2xl bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Share influencer list</h2>
-              <p className="mt-1 text-sm text-slate-600">Share this campaign list by link or export as an Excel file.</p>
+              <p className="mt-1 text-sm text-slate-600">
+                Share a read-only list with your client (mock: Sarah Chen → David Kim). Open preview to see the same view
+                they get, including comments.
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Link
+                href={`/campaigns/${bridgeId}/share`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-800 hover:bg-indigo-100"
+              >
+                Open client preview
+              </Link>
               <button
                 type="button"
                 onClick={copyShareLink}
                 className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700"
               >
-                Share link
+                Copy share link
               </button>
               <button
                 type="button"
@@ -191,7 +326,7 @@ export default function CampaignDetailPage() {
               </button>
             </div>
           </div>
-          {shareMessage ? <p className="mt-3 text-xs font-medium text-emerald-700">{shareMessage}</p> : null}
+          {shareMessage && !isCampaignFinished ? <p className="mt-3 text-xs font-medium text-emerald-700">{shareMessage}</p> : null}
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[900px] text-left text-sm">
               <thead className="bg-slate-50 text-slate-600">

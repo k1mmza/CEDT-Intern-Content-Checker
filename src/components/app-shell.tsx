@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { Navigation } from "@/components/navigation";
+import { SiteFooter } from "@/components/site-footer";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
@@ -15,9 +16,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isLandingPage) {
     return (
-      <main className="mx-auto min-h-screen max-w-6xl px-4 py-6">
+      <main className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-6">
         <Navigation />
-        {children}
+        <div className="flex-1">{children}</div>
+        <SiteFooter />
       </main>
     );
   }
@@ -27,14 +29,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <main className="min-h-screen px-4 py-6 lg:px-6">
-      <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+    <main className="flex min-h-screen flex-col px-4 py-6 lg:px-6">
+      <div className="grid flex-1 gap-6 lg:grid-cols-[220px_1fr]">
         <aside>
           <Navigation />
           <div id="app-sidebar-slot" className="mt-4" />
         </aside>
         <section>{children}</section>
       </div>
+      <SiteFooter />
     </main>
   );
 }

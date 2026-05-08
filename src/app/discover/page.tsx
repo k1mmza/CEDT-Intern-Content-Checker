@@ -2,6 +2,7 @@
 
 import { InfluencerCard } from "@/components/influencer-card";
 import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
+import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
 import { Influencer } from "@/lib/types";
 import { influencers } from "@/mock/influencers";
 import { useEffect, useMemo, useState } from "react";
@@ -24,7 +25,7 @@ type InfluencerMeta = {
 };
 
 const categories = ["All", "Beauty", "Fashion", "Fitness", "Food", "Travel", "Tech", "Lifestyle"];
-const platforms = ["TikTok", "Instagram", "YouTube", "Facebook", "X", "Lemon8"];
+const platforms = ["TikTok", "Instagram", "YouTube", "Facebook", "X", "Lemon8", "LinkedIn", "Red Note (Xiaohongshu)"];
 const campaignIntents = ["Awareness", "Engagement", "Conversion", "UGC / content production"];
 const ageGroups = ["All", "18-24", "25-34", "35-44", "45+"];
 const audienceGenders = ["All", "Female", "Male", "Mixed"];
@@ -147,6 +148,7 @@ export default function DiscoverPage() {
   const [maxRatePerPost, setMaxRatePerPost] = useState(0);
   const [minResponseRate, setMinResponseRate] = useState(0);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [mainPlatformFilter, setMainPlatformFilter] = useState<string>("All");
   const [selectedInfluencerId, setSelectedInfluencerId] = useState<string | null>(null);
   const [socialUrl, setSocialUrl] = useState("");
   const [urlSearchError, setUrlSearchError] = useState("");
@@ -180,6 +182,7 @@ export default function DiscoverPage() {
     setMinPerformanceScore(0);
     setMaxRatePerPost(0);
     setMinResponseRate(0);
+    setMainPlatformFilter("All");
   };
   const applySmartQuery = () => {
     const normalized = smartQuery.toLowerCase();
@@ -341,6 +344,7 @@ export default function DiscoverPage() {
       name: displayName,
       platforms: [platform],
       followers,
+      followersByPlatform: { [platform]: followers },
       engagementRate,
       category: inferredCategory,
       performanceScore,
@@ -416,6 +420,8 @@ export default function DiscoverPage() {
         const passPerformanceScore = item.performanceScore >= minPerformanceScore;
         const passPricing = maxRatePerPost <= 0 || item.ratePerPost <= maxRatePerPost;
         const passResponseRate = meta.responseRate >= minResponseRate;
+        const mainPlatform = getMainFollowerPlatform(item).platform;
+        const passMainPlatform = mainPlatformFilter === "All" || mainPlatform === mainPlatformFilter;
 
         return (
           passPlatform &&
@@ -435,7 +441,8 @@ export default function DiscoverPage() {
           passQualityScore &&
           passPerformanceScore &&
           passPricing &&
-          passResponseRate
+          passResponseRate &&
+          passMainPlatform
         );
       }),
     [
@@ -454,6 +461,7 @@ export default function DiscoverPage() {
       minPerformanceScore,
       minQualityScore,
       minResponseRate,
+      mainPlatformFilter,
       selectedCampaignIntents,
       selectedPlatforms,
       stylePresent
@@ -468,7 +476,8 @@ export default function DiscoverPage() {
     category !== "All" ? category : "",
     followerRange !== "All" ? followerRange : "",
     stylePresent !== "All" ? stylePresent : "",
-    minEngagementRate > 0 ? `ER >= ${minEngagementRate}%` : ""
+    minEngagementRate > 0 ? `ER >= ${minEngagementRate}%` : "",
+    mainPlatformFilter !== "All" ? `Main audience: ${mainPlatformFilter}` : ""
   ].filter(Boolean);
 
   const discoverCards = useMemo(() => {
@@ -567,6 +576,23 @@ export default function DiscoverPage() {
                       </label>
                     ))}
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600">Main audience platform</label>
+                  <p className="mt-0.5 text-[11px] text-slate-500">Where this creator has the most followers.</p>
+                  <select
+                    value={mainPlatformFilter}
+                    onChange={(event) => setMainPlatformFilter(event.target.value)}
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-xs"
+                  >
+                    <option value="All">Any platform</option>
+                    {platforms.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

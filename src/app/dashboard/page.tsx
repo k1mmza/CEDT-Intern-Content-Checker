@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { BrandDashboard } from "@/components/brand-dashboard";
 import { useUserStore } from "@/store/useUserStore";
 
@@ -138,19 +137,7 @@ function AgencyDashboard() {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Smart Advisor</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Get AI-powered creator matchmaking, performance predictions, and content ideas.
-          </p>
-          <Link
-            href="/smart-advisor"
-            className="mt-4 inline-flex rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white"
-          >
-            Open Smart Advisor
-          </Link>
-        </article>
+      <div className="grid gap-4 md:grid-cols-1 lg:max-w-2xl">
         <article className="rounded-2xl bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Strategy assistant</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">

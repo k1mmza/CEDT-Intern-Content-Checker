@@ -1033,34 +1033,6 @@ Brand side profile page
 
 ---------------------------------------------------------------------------------------
 
-Smart Advisor (Agency + Brand side)
-- smart advisor is private AI advisor for brand and agency team
-- main goal:
-  - AI-powered matchmaking (not just search)
-    - suggest best-fit creators for campaign objective and budget
-    - predict performance (estimated views, engagement, conversion)
-    - suggest content ideas by objective and category
-  - strategy-first platform
-    - recommend budget split (creator fee, paid boost, production, contingency)
-    - suggest platform mix (TikTok, IG, YouTube allocation)
-    - plan campaign structure (briefing, production, publish, optimize)
-- page input
-  - campaign objective: awareness / engagement / conversion
-  - total budget
-  - campaign duration (weeks)
-- page output
-  - creator shortlist with fit score and recommended budget allocation
-  - predicted KPI card per creator
-  - suggested content angle list
-  - budget split recommendation
-  - platform mix recommendation
-  - campaign timeline plan
-- access
-  - visible for role agency and brand
-  - not visible for influencer
-
----------------------------------------------------------------------------------------
-
 # 🔍 Influencer Detail Page (For Brand / Agency Decision Making)
 
 ---

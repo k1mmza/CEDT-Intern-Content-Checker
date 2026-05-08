@@ -69,16 +69,6 @@ export function BrandDashboard() {
           </Link>
         </article>
         <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Smart Advisor</h2>
-          <p className="mt-2 text-sm text-slate-600">AI matchmaking, budget split, platform mix, and campaign plan.</p>
-          <Link
-            href="/smart-advisor"
-            className="mt-3 inline-flex rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white"
-          >
-            Open Advisor
-          </Link>
-        </article>
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Messages</h2>
           <p className="mt-2 text-sm text-slate-600">Chat with influencers and share briefs.</p>
           <Link

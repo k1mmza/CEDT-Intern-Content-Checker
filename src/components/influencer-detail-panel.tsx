@@ -1,3 +1,4 @@
+import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
 import { Influencer } from "@/lib/types";
 
 interface InfluencerMeta {
@@ -50,6 +51,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
   const estimatedCostPerEngagement = (influencer.ratePerPost / Math.max(meta.averageViews * (influencer.engagementRate / 100), 1)).toFixed(2);
   const avatarUrl = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
   const allPlatforms = [...influencer.platforms, ...meta.extraPlatforms];
+  const mainFollowers = getMainFollowerPlatform(influencer);
 
   return (
     <aside className="fixed right-4 top-20 z-30 h-[calc(100vh-6rem)] w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
@@ -85,6 +87,10 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
                 </span>
               ))}
             </div>
+            <p className="mt-2 text-xs text-slate-600">
+              <span className="font-semibold text-slate-800">Largest audience:</span> {mainFollowers.platform} ·{" "}
+              {mainFollowers.followers.toLocaleString()} followers
+            </p>
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
               <div className="rounded-lg bg-slate-50 p-2">
                 <p className="text-slate-500">Followers</p>

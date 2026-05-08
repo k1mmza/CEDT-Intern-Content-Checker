@@ -1,8 +1,37 @@
 "use client";
 
+import { ProcessOfWorkPanel, WorkStatusDot, WorkStatusIndicator, type WorkPhase } from "@/components/messages/process-of-work-panel";
 import { useUserStore } from "@/store/useUserStore";
 
+const influencerConversations: {
+  brand: string;
+  campaign: string;
+  preview: string;
+  time: string;
+  unread: boolean;
+  phase: WorkPhase;
+}[] = [
+  { brand: "GlowLab", campaign: "Summer Skincare", preview: "Need your draft by Friday", time: "2m", unread: true, phase: "draft" },
+  { brand: "FitBites", campaign: "Snack Challenge", preview: "Looks good, please revise CTA", time: "1h", unread: true, phase: "work" },
+  { brand: "Roamly", campaign: "Travel Light", preview: "Payment completed", time: "Yesterday", unread: false, phase: "payment" },
+];
+
+const brandConversations: {
+  name: string;
+  campaign: string;
+  preview: string;
+  time: string;
+  unread: boolean;
+  phase: WorkPhase;
+}[] = [
+  { name: "Lina Park", campaign: "Summer Skincare", preview: "Uploading draft tomorrow AM", time: "5m", unread: true, phase: "draft" },
+  { name: "Pat K.", campaign: "Healthy Snack", preview: "CTA line updated in caption", time: "32m", unread: true, phase: "brief" },
+  { name: "Nina V.", campaign: "Travel Light", preview: "Thanks—closing this thread", time: "2d", unread: false, phase: "payment" },
+];
+
 function InfluencerMessagesView() {
+  const openPhase: WorkPhase = "draft";
+
   return (
     <section className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white shadow-sm">
@@ -27,21 +56,20 @@ function InfluencerMessagesView() {
           </div>
 
           <div className="mt-4 space-y-2">
-            {[
-              ["GlowLab", "Summer Skincare", "Need your draft by Friday", "2m", true],
-              ["FitBites", "Snack Challenge", "Looks good, please revise CTA", "1h", true],
-              ["Roamly", "Travel Light", "Payment completed", "Yesterday", false]
-            ].map(([brand, campaign, preview, time, unread]) => (
-              <div key={`${brand}-${campaign}`} className="rounded-xl border border-slate-200 p-3">
+            {influencerConversations.map(({ brand, campaign, preview, time, unread, phase }) => (
+              <div key={`${brand}-${campaign}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{brand}</p>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-indigo-950">{brand}</p>
                     <p className="text-xs text-slate-500">{campaign}</p>
                   </div>
-                  <span className="text-xs text-slate-400">{time}</span>
+                  <span className="shrink-0 text-xs text-slate-400">{time}</span>
                 </div>
                 <p className="mt-1 line-clamp-1 text-xs text-slate-600">{preview}</p>
-                {unread ? <span className="mt-2 inline-flex h-2.5 w-2.5 rounded-full bg-indigo-500" /> : null}
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <WorkStatusDot phase={phase} />
+                  {unread ? <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">New</span> : null}
+                </div>
               </div>
             ))}
           </div>
@@ -49,11 +77,17 @@ function InfluencerMessagesView() {
 
         <article className="rounded-2xl bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <p className="text-sm font-semibold text-slate-900">GlowLab</p>
-              <p className="text-xs text-slate-500">Summer Skincare Campaign</p>
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900">GlowLab</p>
+                <p className="text-xs text-slate-500">Summer Skincare Campaign</p>
+              </div>
+              <WorkStatusIndicator phase={openPhase} className="hidden sm:inline-flex" />
             </div>
-            <span className="text-xs text-emerald-600">Online</span>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <WorkStatusIndicator phase={openPhase} className="sm:hidden" />
+              <span className="text-xs text-emerald-600">Online</span>
+            </div>
           </div>
 
           <div className="space-y-3 py-4">
@@ -80,47 +114,14 @@ function InfluencerMessagesView() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-            <button className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white">Accept Brief</button>
-            <button className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">Submit Draft</button>
-            <button className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">Request Revision</button>
-            <button className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">Mark Completed</button>
-          </div>
-
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
             <input placeholder="Type your message..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
             <button className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Send</button>
           </div>
         </article>
 
         <aside className="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Campaign Context</h2>
-            <ul className="mt-2 space-y-1 text-sm text-slate-600">
-              <li>Campaign: Summer Skincare</li>
-              <li>Budget: THB 8,000 - 10,000</li>
-              <li>Deadline: 30 May 2026</li>
-              <li>Contact: Kate (Brand Manager)</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900">Deliverables</h3>
-            <ul className="mt-2 space-y-2 text-sm text-slate-600">
-              <li className="rounded-lg bg-slate-50 px-3 py-2">[x] 1 TikTok concept approved</li>
-              <li className="rounded-lg bg-slate-50 px-3 py-2">[ ] 1 TikTok draft upload</li>
-              <li className="rounded-lg bg-slate-50 px-3 py-2">[ ] 3 IG story frames</li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900">Suggested Replies</h3>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">Got it 👍</button>
-              <button className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">Will update soon</button>
-              <button className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">Can you clarify?</button>
-            </div>
-          </div>
+          <ProcessOfWorkPanel variant="influencer" />
         </aside>
       </div>
     </section>
@@ -128,6 +129,8 @@ function InfluencerMessagesView() {
 }
 
 function BrandMessagesView() {
+  const openPhase: WorkPhase = "draft";
+
   return (
     <section className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white shadow-sm">
@@ -152,21 +155,20 @@ function BrandMessagesView() {
           </div>
 
           <div className="mt-4 space-y-2">
-            {[
-              ["Lina Park", "Summer Skincare", "Uploading draft tomorrow AM", "5m", true],
-              ["Pat K.", "Healthy Snack", "CTA line updated in caption", "32m", true],
-              ["Nina V.", "Travel Light", "Thanks—closing this thread", "2d", false]
-            ].map(([name, campaign, preview, time, unread]) => (
-              <div key={`${name}-${campaign}`} className="rounded-xl border border-slate-200 p-3">
+            {brandConversations.map(({ name, campaign, preview, time, unread, phase }) => (
+              <div key={`${name}-${campaign}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{name}</p>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-indigo-950">{name}</p>
                     <p className="text-xs text-slate-500">{campaign}</p>
                   </div>
-                  <span className="text-xs text-slate-400">{time}</span>
+                  <span className="shrink-0 text-xs text-slate-400">{time}</span>
                 </div>
                 <p className="mt-1 line-clamp-1 text-xs text-slate-600">{preview}</p>
-                {unread ? <span className="mt-2 inline-flex h-2.5 w-2.5 rounded-full bg-indigo-500" /> : null}
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <WorkStatusDot phase={phase} />
+                  {unread ? <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">New</span> : null}
+                </div>
               </div>
             ))}
           </div>
@@ -174,11 +176,17 @@ function BrandMessagesView() {
 
         <article className="rounded-2xl bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <p className="text-sm font-semibold text-slate-900">Lina Park</p>
-              <p className="text-xs text-slate-500">Summer Skincare Campaign</p>
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900">Lina Park</p>
+                <p className="text-xs text-slate-500">Summer Skincare Campaign</p>
+              </div>
+              <WorkStatusIndicator phase={openPhase} className="hidden sm:inline-flex" />
             </div>
-            <span className="text-xs text-emerald-600">Active</span>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <WorkStatusIndicator phase={openPhase} className="sm:hidden" />
+              <span className="text-xs text-emerald-600">Active</span>
+            </div>
           </div>
 
           <div className="space-y-3 py-4">
@@ -208,16 +216,10 @@ function BrandMessagesView() {
 
         <aside className="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Filter</h2>
-            <p className="mt-1 text-sm text-slate-600">Campaign: Summer Skincare (demo)</p>
+            <h2 className="text-sm font-semibold text-slate-900">Filter</h2>
+            <p className="mt-1 text-xs text-slate-600">Campaign: Summer Skincare (demo)</p>
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900">Quick actions</h3>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white">Request revision</button>
-              <button className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">Approve post</button>
-            </div>
-          </div>
+          <ProcessOfWorkPanel variant="brand" />
         </aside>
       </div>
     </section>
@@ -226,6 +228,6 @@ function BrandMessagesView() {
 
 export default function MessagesPage() {
   const { role } = useUserStore();
-  if (role === "brand") return <BrandMessagesView />;
+  if (role === "brand" || role === "agency") return <BrandMessagesView />;
   return <InfluencerMessagesView />;
 }

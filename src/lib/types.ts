@@ -4,7 +4,10 @@ export interface Influencer {
   id: string;
   name: string;
   platforms: string[];
+  /** Total reach; should align with sum of followersByPlatform when both are set. */
   followers: number;
+  /** Follower count per platform; largest entry is the creator's primary audience platform. */
+  followersByPlatform: Record<string, number>;
   engagementRate: number;
   category: string;
   performanceScore: number;

@@ -4,12 +4,15 @@ import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { useUserStore } from "@/store/useUserStore";
 
-type StepId = "requirement" | "strategy" | "concept" | "brief" | "influencer" | "message" | "tracking";
+type StepId = "requirement" | "brief";
 
 type RequirementData = {
   campaignName: string;
   objective: string;
+  contentAngle: string;
   productInfo: string;
+  productLinkOrWebsite: string;
+  ctaMessage: string;
   targetAudience: string;
   brandTone: string;
   budget: string;
@@ -27,27 +30,18 @@ type Campaign = {
   result: string;
 };
 
-type InfluencerItem = {
-  id: string;
-  name: string;
-  niche: string;
-  followers: string;
-};
-
 const stepBar: { id: StepId; label: string }[] = [
   { id: "requirement", label: "Requirement" },
-  { id: "strategy", label: "Strategy" },
-  { id: "concept", label: "Concept" },
   { id: "brief", label: "Brief" },
-  { id: "influencer", label: "Influencer" },
-  { id: "message", label: "Message" },
-  { id: "tracking", label: "Tracking" },
 ];
 
 const requirementFields: { key: keyof RequirementData; label: string }[] = [
   { key: "campaignName", label: "Campaign Name" },
   { key: "objective", label: "Objective" },
+  { key: "contentAngle", label: "Content Angle" },
   { key: "productInfo", label: "Product Info" },
+  { key: "productLinkOrWebsite", label: "Product link or official website" },
+  { key: "ctaMessage", label: "CTA message" },
   { key: "targetAudience", label: "Target Audience" },
   { key: "brandTone", label: "Brand Identity/Tone" },
   { key: "budget", label: "Budget" },
@@ -56,22 +50,18 @@ const requirementFields: { key: keyof RequirementData; label: string }[] = [
   { key: "doDont", label: "Do & Dont" },
 ];
 
-const sectionAlias: Record<string, StepId> = {
+type BriefSubSection = "strategy" | "concept" | "briefBody";
+
+const sectionAlias: Record<string, StepId | BriefSubSection> = {
   requirement: "requirement",
   strategy: "strategy",
   concept: "concept",
-  brief: "brief",
-  influencer: "influencer",
-  message: "message",
-  messages: "message",
-  tracking: "tracking",
+  brief: "briefBody",
+  influencer: "brief",
+  message: "brief",
+  messages: "brief",
+  tracking: "brief",
 };
-
-const seedInfluencers: InfluencerItem[] = [
-  { id: "inf-1", name: "Nina BeautyLab", niche: "Beauty", followers: "420K" },
-  { id: "inf-2", name: "FitFocus Max", niche: "Fitness", followers: "280K" },
-  { id: "inf-3", name: "Chef Tasty Home", niche: "Food", followers: "150K" },
-];
 
 const myCampaignSeed: Campaign[] = [
   { id: "cmp-1", name: "Glow Summer Launch", status: "Active", budget: "$12,000", timeRange: "Jun 1 - Jul 15", result: "78% KPI hit" },
@@ -91,7 +81,10 @@ function parseRequirementText(text: string): Partial<RequirementData> {
   return {
     campaignName: extract("campaign name"),
     objective: extract("objective"),
+    contentAngle: extract("content angle"),
     productInfo: extract("product info"),
+    productLinkOrWebsite: extract("product link") || extract("official website") || extract("website"),
+    ctaMessage: extract("cta message") || extract("cta"),
     targetAudience: extract("target audience"),
     brandTone: extract("brand"),
     budget: extract("budget"),
@@ -112,7 +105,10 @@ export default function SmartPlanPage() {
   const [requirements, setRequirements] = useState<RequirementData>({
     campaignName: "",
     objective: "",
+    contentAngle: "",
     productInfo: "",
+    productLinkOrWebsite: "",
+    ctaMessage: "",
     targetAudience: "",
     brandTone: "",
     budget: "",
@@ -123,14 +119,10 @@ export default function SmartPlanPage() {
   const [strategyText, setStrategyText] = useState("");
   const [conceptText, setConceptText] = useState("");
   const [briefText, setBriefText] = useState("");
-  const [influencerText, setInfluencerText] = useState("");
-  const [messageText, setMessageText] = useState("");
-  const [trackingText, setTrackingText] = useState("");
-  const [selectedInfluencers, setSelectedInfluencers] = useState<InfluencerItem[]>([]);
 
   const promptHint = useMemo(() => {
     return hasStarted
-      ? "Use @Requirement, @Strategy, @Concept, @Brief, @Influencer, @Message, or @Tracking before details."
+      ? "Use @Requirement, @Strategy, @Concept, or @Brief before details (brief step covers strategy, concept, and creative brief)."
       : "Start with @Requirement and describe campaign details for AI planning.";
   }, [hasStarted]);
 
@@ -140,19 +132,28 @@ export default function SmartPlanPage() {
 
     const tagMatch = trimmed.match(/^@([a-zA-Z]+)\s*/);
     const section = tagMatch?.[1]?.toLowerCase();
-    const resolvedSection = section ? sectionAlias[section] : undefined;
+    const resolved = section ? sectionAlias[section] : undefined;
     const payload = tagMatch ? trimmed.replace(/^@[a-zA-Z]+\s*/, "") : trimmed;
 
     setHasStarted(true);
     setIsPlannerVisible(true);
-    if (resolvedSection) setActiveStep(resolvedSection);
 
-    if (!resolvedSection || resolvedSection === "requirement") {
+    const briefSubs: BriefSubSection[] = ["strategy", "concept", "briefBody"];
+    if (resolved === "requirement") {
+      setActiveStep("requirement");
+    } else if (resolved === "brief" || (resolved && briefSubs.includes(resolved as BriefSubSection))) {
+      setActiveStep("brief");
+    }
+
+    if (!resolved || resolved === "requirement") {
       const parsed = parseRequirementText(payload);
       setRequirements((prev) => ({
         campaignName: parsed.campaignName || prev.campaignName,
         objective: parsed.objective || prev.objective,
+        contentAngle: parsed.contentAngle || prev.contentAngle,
         productInfo: parsed.productInfo || prev.productInfo,
+        productLinkOrWebsite: parsed.productLinkOrWebsite || prev.productLinkOrWebsite,
+        ctaMessage: parsed.ctaMessage || prev.ctaMessage,
         targetAudience: parsed.targetAudience || prev.targetAudience,
         brandTone: parsed.brandTone || prev.brandTone,
         budget: parsed.budget || prev.budget,
@@ -163,19 +164,12 @@ export default function SmartPlanPage() {
       if (!strategyText) setStrategyText("AI Suggestion: Build phased creator funnel and run awareness to conversion sequence.");
       if (!conceptText) setConceptText("AI Suggestion: Hero concept around authentic lifestyle transformation with before/after storytelling.");
       if (!briefText) setBriefText("AI Suggestion: Provide creator brief with content format, CTA, brand guardrails, and timeline.");
-      if (!influencerText) setInfluencerText("AI Suggestion: Prioritize mid-tier creators in beauty and lifestyle with high engagement.");
-    } else if (resolvedSection === "strategy") {
+    } else if (resolved === "strategy") {
       setStrategyText(payload);
-    } else if (resolvedSection === "concept") {
+    } else if (resolved === "concept") {
       setConceptText(payload);
-    } else if (resolvedSection === "brief") {
+    } else if (resolved === "briefBody" || resolved === "brief") {
       setBriefText(payload);
-    } else if (resolvedSection === "influencer") {
-      setInfluencerText(payload);
-    } else if (resolvedSection === "message") {
-      setMessageText(payload);
-    } else if (resolvedSection === "tracking") {
-      setTrackingText(payload);
     }
 
     return true;
@@ -190,14 +184,6 @@ export default function SmartPlanPage() {
 
   const updateRequirement = (field: keyof RequirementData, value: string) => {
     setRequirements((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const addInfluencer = (item: InfluencerItem) => {
-    setSelectedInfluencers((prev) => (prev.some((i) => i.id === item.id) ? prev : [...prev, item]));
-  };
-
-  const removeInfluencer = (id: string) => {
-    setSelectedInfluencers((prev) => prev.filter((item) => item.id !== id));
   };
 
   if (role === "influencer") {
@@ -216,7 +202,7 @@ export default function SmartPlanPage() {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Smart Plan</h1>
-          <p className="mt-1 text-sm text-slate-600">Plan your campaign journey from requirements to tracking.</p>
+          <p className="mt-1 text-sm text-slate-600">Plan your campaign from requirements through the creative brief.</p>
         </div>
         <Link
           href="/dashboard"
@@ -349,7 +335,13 @@ export default function SmartPlanPage() {
                     value={requirements[field.key]}
                     onChange={(event) => updateRequirement(field.key, event.target.value)}
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                    placeholder={`Enter ${field.label.toLowerCase()}`}
+                    placeholder={
+                      field.key === "productLinkOrWebsite"
+                        ? "https://…"
+                        : field.key === "ctaMessage"
+                          ? "e.g. Shop now, link in bio"
+                          : `Enter ${field.label.toLowerCase()}`
+                    }
                   />
                 </label>
               ))}
@@ -359,159 +351,53 @@ export default function SmartPlanPage() {
             </div>
           )}
 
-          {activeStep === "strategy" && (
-            <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Strategy</h2>
-              <textarea
-                rows={6}
-                value={strategyText}
-                onChange={(event) => setStrategyText(event.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-              />
-              <button type="button" className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700">
-                Save Strategy
-              </button>
-            </div>
-          )}
-
-          {activeStep === "concept" && (
-            <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Concept</h2>
-              <textarea
-                rows={6}
-                value={conceptText}
-                onChange={(event) => setConceptText(event.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-              />
-              <button type="button" className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700">
-                Save Concept
-              </button>
-            </div>
-          )}
-
           {activeStep === "brief" && (
-            <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="space-y-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <h2 className="text-base font-semibold text-slate-900">Brief</h2>
-              <textarea
-                rows={6}
-                value={briefText}
-                onChange={(event) => setBriefText(event.target.value)}
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-              />
+              <p className="text-xs text-slate-500">Strategy, concept, and creative brief live in one place for creators and stakeholders.</p>
+
+              <div className="space-y-2">
+                <span className="block text-xs font-medium text-slate-600">Strategy</span>
+                <textarea
+                  rows={5}
+                  value={strategyText}
+                  onChange={(event) => setStrategyText(event.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <span className="block text-xs font-medium text-slate-600">Concept</span>
+                <textarea
+                  rows={5}
+                  value={conceptText}
+                  onChange={(event) => setConceptText(event.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <span className="block text-xs font-medium text-slate-600">Creative brief</span>
+                <textarea
+                  rows={5}
+                  value={briefText}
+                  onChange={(event) => setBriefText(event.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                />
+              </div>
+
               <button type="button" className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700">
-                Save Brief
+                Save brief
               </button>
-            </div>
-          )}
-
-          {activeStep === "influencer" && (
-            <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-slate-900">Influencer</h2>
-                <div className="flex gap-2">
-                  <button type="button" className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100">
-                    Export Excel
-                  </button>
-                  <button type="button" className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100">
-                    Share Link
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid gap-3">
-                {seedInfluencers.map((item) => (
-                  <div key={item.id} className="rounded-lg border border-slate-200 p-3">
-                    <div className="font-semibold text-slate-900">{item.name}</div>
-                    <div className="text-xs text-slate-500">{item.niche} • {item.followers} followers</div>
-                    <div className="mt-2 flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => addInfluencer(item)}
-                        className="rounded-lg bg-indigo-600 px-2 py-1 text-xs font-semibold text-white hover:bg-indigo-700"
-                      >
-                        Add to List
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActiveStep("message")}
-                        className="rounded-lg border border-indigo-300 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50"
-                      >
-                        Message
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div>
-                <h3 className="mb-2 text-sm font-semibold text-slate-800">Selected List</h3>
-                <ul className="space-y-2 text-sm text-slate-700">
-                  {selectedInfluencers.length === 0 ? (
-                    <li className="text-slate-400">No influencer selected yet.</li>
-                  ) : (
-                    selectedInfluencers.map((item) => (
-                      <li key={item.id} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
-                        <span>{item.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeInfluencer(item.id)}
-                          className="rounded-md border border-rose-300 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
-                        >
-                          Remove
-                        </button>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {activeStep === "message" && (
-            <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Message</h2>
-              <textarea
-                rows={6}
-                value={messageText}
-                onChange={(event) => setMessageText(event.target.value)}
-                placeholder="Chat with influencers and share campaign messaging."
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-              />
-              <button type="button" className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100">
-                Send URL for Influencer Work
-              </button>
-            </div>
-          )}
-
-          {activeStep === "tracking" && (
-            <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-slate-900">Tracking</h2>
-                <div className="flex gap-2">
-                  <button type="button" className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100">
-                    Share Link
-                  </button>
-                  <button type="button" className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100">
-                    Export PDF
-                  </button>
-                </div>
-              </div>
-              <textarea
-                rows={6}
-                value={trackingText}
-                onChange={(event) => setTrackingText(event.target.value)}
-                placeholder="Track URL performance and campaign outcomes."
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-              />
             </div>
           )}
 
           <form onSubmit={applyPrompt} className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm ${hasStarted ? "sticky bottom-4" : ""}`}>
-            <label htmlFor="smart-plan-input" className="mb-2 block text-sm font-medium text-slate-700">
+            <label htmlFor="smart-plan-input-planner" className="mb-2 block text-sm font-medium text-slate-700">
               AI Prompt Command
             </label>
             <textarea
-              id="smart-plan-input"
+              id="smart-plan-input-planner"
               rows={hasStarted ? 4 : 9}
               value={promptInput}
               onChange={(event) => setPromptInput(event.target.value)}

@@ -12,15 +12,22 @@ interface UserState {
   logout: () => void;
 }
 
+/** Demo display names aligned with profile mocks and partner-review cohorts. */
+const defaultNameForRole = (r: Role): string => {
+  if (r === "brand") return "David Kim";
+  if (r === "influencer") return "Lina Park";
+  return "Sarah Chen";
+};
+
 export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
       name: "Sarah Chen",
       email: "sarah@agency.com",
       role: "agency",
-      setRole: (role) => set({ role }),
+      setRole: (role) => set({ role, name: defaultNameForRole(role) }),
       logout: () => {
-        set({ role: "agency" });
+        set({ role: "agency", name: defaultNameForRole("agency") });
         if (typeof window !== "undefined") {
           window.localStorage.removeItem("influapp-user");
         }

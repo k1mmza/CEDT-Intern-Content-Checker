@@ -1,7 +1,99 @@
 "use client";
 
-import { useState } from "react";
+import { Heart } from "lucide-react";
+import { useMemo, useState } from "react";
+import type { Role } from "@/lib/types";
+import { useReviewStore } from "@/store/useReviewStore";
 import { useUserStore } from "@/store/useUserStore";
+
+function ProfileRatingAvatar({
+  src,
+  alt,
+  imgClassName,
+  role
+}: {
+  src: string;
+  alt: string;
+  imgClassName: string;
+  role: Role;
+}) {
+  const displayName = useUserStore((s) => s.name);
+  const reviews = useReviewStore((s) => s.reviews);
+  const avg = useMemo(
+    () => useReviewStore.getState().getAverageRatingReceived(role, displayName),
+    [reviews, role, displayName]
+  );
+  return (
+    <div className="relative inline-block shrink-0">
+      <img src={src} alt={alt} className={imgClassName} />
+      <div
+        className="pointer-events-none absolute -right-1 -top-1 flex items-center gap-0.5 rounded-full border border-rose-100 bg-white px-1.5 py-0.5 text-[11px] font-bold leading-none text-rose-600 shadow-md"
+        title="Average rating from partners on finished campaigns"
+      >
+        <Heart className="h-3.5 w-3.5 shrink-0 fill-rose-500 text-rose-500" aria-hidden />
+        <span>{avg != null ? avg.toFixed(1) : "—"}</span>
+      </div>
+    </div>
+  );
+}
+
+function ProfileReviewsSection({ role }: { role: Role }) {
+  const displayName = useUserStore((s) => s.name);
+  const reviews = useReviewStore((s) => s.reviews);
+  const written = useMemo(
+    () => useReviewStore.getState().getReviewsWrittenBy(role, displayName),
+    [reviews, role, displayName]
+  );
+  const received = useMemo(
+    () => useReviewStore.getState().getReviewsReceivedBy(role, displayName),
+    [reviews, role, displayName]
+  );
+
+  return (
+    <article className="rounded-2xl bg-white p-5 shadow-sm">
+      <h2 className="text-lg font-semibold text-slate-900">Partner review ratings</h2>
+      <p className="mt-1 text-xs text-slate-500">
+        Ratings use your account display name (same as when you submit reviews on a finished campaign).
+      </p>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-800">Comments you wrote</h3>
+          {written.length === 0 ? (
+            <p className="mt-2 text-sm text-slate-500">No reviews yet. Finish a campaign, then rate partners from the campaign page.</p>
+          ) : (
+            <ul className="mt-2 space-y-2 text-sm text-slate-600">
+              {written.map((r) => (
+                <li key={r.id} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                  <p className="font-medium text-slate-900">
+                    {r.rating}/5 → {r.toName} ({r.toRole}) — {r.campaignName}
+                  </p>
+                  {r.comment ? <p className="mt-1 text-slate-600">&ldquo;{r.comment}&rdquo;</p> : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-slate-800">Comments about you</h3>
+          {received.length === 0 ? (
+            <p className="mt-2 text-sm text-slate-500">No partner feedback yet.</p>
+          ) : (
+            <ul className="mt-2 space-y-2 text-sm text-slate-600">
+              {received.map((r) => (
+                <li key={r.id} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                  <p className="font-medium text-slate-900">
+                    {r.rating}/5 from {r.fromName} ({r.fromRole}) — {r.campaignName}
+                  </p>
+                  {r.comment ? <p className="mt-1 text-slate-600">&ldquo;{r.comment}&rdquo;</p> : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
 
 const mockInfluencerProfile = {
   name: "Lina Park",
@@ -51,30 +143,63 @@ const mockBrandProfile = {
   position: "Head of Growth",
   email: "sarah.chen@glowlab.mock",
   phone: "+66 2 000 0000",
-  companyDetail: "Dermatologist-tested skincare for daily routines. HQ Bangkok; shipping SEA."
+  companyDetail: "Dermatologist-tested skincare for daily routines. HQ Bangkok; shipping SEA.",
+  websiteUrl: "https://www.glowlab.mock",
+  socialInstagram: "https://www.instagram.com/glowlab.mock",
+  socialFacebook: "https://www.facebook.com/glowlab.mock",
+  socialLinkedIn: "https://www.linkedin.com/company/glowlab-mock",
+  socialTikTok: "https://www.tiktok.com/@glowlab.mock"
+};
+
+const mockAgencyProfile = {
+  companyName: "Digital Marketing Agency Co., Ltd.",
+  userName: "Sarah Chen",
+  position: "Senior Campaign Manager",
+  email: "sarah.chen@agency.mock",
+  phone: "+66 2 111 2222",
+  companyDetail: "Full-service influencer and performance campaigns across SEA. Offices in Bangkok and Singapore.",
+  websiteUrl: "https://www.digitalagency.mock",
+  socialInstagram: "https://www.instagram.com/digitalagency.mock",
+  socialFacebook: "https://www.facebook.com/digitalagency.mock",
+  socialLinkedIn: "https://www.linkedin.com/company/digitalagency-mock",
+  socialTikTok: ""
 };
 
 function BrandProfileView() {
-  const [companyName, setCompanyName] = useState(mockBrandProfile.companyName);
-  const [userName, setUserName] = useState(mockBrandProfile.userName);
-  const [position, setPosition] = useState(mockBrandProfile.position);
-  const [email, setEmail] = useState(mockBrandProfile.email);
-  const [phone, setPhone] = useState(mockBrandProfile.phone);
-  const [companyDetail, setCompanyDetail] = useState(mockBrandProfile.companyDetail);
+  const { role } = useUserStore();
+  const profileRole: Role = role === "agency" ? "agency" : "brand";
+  const base = role === "agency" ? mockAgencyProfile : mockBrandProfile;
+  const [companyName, setCompanyName] = useState(base.companyName);
+  const [userName, setUserName] = useState(base.userName);
+  const [position, setPosition] = useState(base.position);
+  const [email, setEmail] = useState(base.email);
+  const [phone, setPhone] = useState(base.phone);
+  const [companyDetail, setCompanyDetail] = useState(base.companyDetail);
+  const [websiteUrl, setWebsiteUrl] = useState(base.websiteUrl);
+  const [socialInstagram, setSocialInstagram] = useState(base.socialInstagram);
+  const [socialFacebook, setSocialFacebook] = useState(base.socialFacebook);
+  const [socialLinkedIn, setSocialLinkedIn] = useState(base.socialLinkedIn);
+  const [socialTikTok, setSocialTikTok] = useState(base.socialTikTok);
   const avatarUrl = `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(companyName)}`;
+  const heading = role === "agency" ? "Agency profile" : "Brand profile";
+  const subline =
+    role === "agency"
+      ? "Agency and account details; add your site and socials so creators know who they are working with."
+      : "Company and account details; add your site and socials for creator trust.";
 
   return (
-    <section className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-900">Brand profile</h1>
-      <p className="text-slate-600">Company and account details; manage your password in Account.</p>
+    <section key={role} className="space-y-6">
+      <h1 className="text-2xl font-bold text-slate-900">{heading}</h1>
+      <p className="text-slate-600">{subline} Manage your password in Account.</p>
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
         <article className="rounded-2xl bg-white p-5 shadow-sm">
           <div className="flex flex-col items-center text-center">
-            <img
+            <ProfileRatingAvatar
               src={avatarUrl}
               alt="Company"
-              className="h-24 w-24 rounded-2xl border border-slate-200 object-cover"
+              imgClassName="h-24 w-24 rounded-2xl border border-slate-200 object-cover"
+              role={profileRole}
             />
             <p className="mt-3 text-sm text-slate-500">Company logo (demo)</p>
             <button type="button" className="mt-2 text-sm font-semibold text-indigo-600 hover:underline">
@@ -138,10 +263,70 @@ function BrandProfileView() {
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
               />
             </label>
+
+            <div className="mt-6 border-t border-slate-100 pt-5">
+              <h3 className="text-base font-semibold text-slate-900">Website &amp; company socials</h3>
+              <p className="mt-1 text-xs text-slate-500">Shown on campaign pages and briefs (demo fields only).</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="block text-sm sm:col-span-2">
+                  <span className="text-slate-600">Company website</span>
+                  <input
+                    type="url"
+                    value={websiteUrl}
+                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                    placeholder="https://"
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                  />
+                </label>
+                <label className="block text-sm">
+                  <span className="text-slate-600">Instagram</span>
+                  <input
+                    type="url"
+                    value={socialInstagram}
+                    onChange={(e) => setSocialInstagram(e.target.value)}
+                    placeholder="https://www.instagram.com/…"
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                  />
+                </label>
+                <label className="block text-sm">
+                  <span className="text-slate-600">Facebook</span>
+                  <input
+                    type="url"
+                    value={socialFacebook}
+                    onChange={(e) => setSocialFacebook(e.target.value)}
+                    placeholder="https://www.facebook.com/…"
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                  />
+                </label>
+                <label className="block text-sm">
+                  <span className="text-slate-600">LinkedIn</span>
+                  <input
+                    type="url"
+                    value={socialLinkedIn}
+                    onChange={(e) => setSocialLinkedIn(e.target.value)}
+                    placeholder="https://www.linkedin.com/company/…"
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                  />
+                </label>
+                <label className="block text-sm">
+                  <span className="text-slate-600">TikTok</span>
+                  <input
+                    type="url"
+                    value={socialTikTok}
+                    onChange={(e) => setSocialTikTok(e.target.value)}
+                    placeholder="https://www.tiktok.com/@…"
+                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                  />
+                </label>
+              </div>
+            </div>
+
             <button type="button" className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white">
               Save changes (demo)
             </button>
           </article>
+
+          <ProfileReviewsSection role={profileRole} />
 
           <article className="rounded-2xl bg-white p-5 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Account</h2>
@@ -179,10 +364,11 @@ function InfluencerProfileView() {
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
         <article className="rounded-2xl bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <img
+            <ProfileRatingAvatar
               src={avatarUrl}
               alt={`${mockProfile.name} profile`}
-              className="h-14 w-14 rounded-full border border-slate-200 object-cover"
+              imgClassName="h-14 w-14 rounded-full border border-slate-200 object-cover"
+              role="influencer"
             />
             <div>
               <h2 className="text-lg font-semibold text-slate-900">{mockProfile.name}</h2>
@@ -242,6 +428,8 @@ function InfluencerProfileView() {
           </article>
         </div>
       </div>
+
+      <ProfileReviewsSection role="influencer" />
 
       <div className="grid gap-4 md:grid-cols-2">
         <article className="rounded-2xl bg-white p-5 shadow-sm">
