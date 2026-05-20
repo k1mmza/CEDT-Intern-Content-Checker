@@ -5,7 +5,8 @@ import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
 import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
 import { Influencer } from "@/lib/types";
 import { influencers } from "@/mock/influencers";
-import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type FollowerRange = "All" | "Nano" | "Micro" | "Mid" | "Macro" | "Mega";
@@ -127,6 +128,23 @@ const influencerMeta: Record<string, InfluencerMeta> = {
 };
 
 export default function DiscoverPage() {
+  return (
+    <Suspense fallback={<DiscoverPageFallback />}>
+      <DiscoverPageContent />
+    </Suspense>
+  );
+}
+
+function DiscoverPageFallback() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-500">Loading discovery…</div>
+  );
+}
+
+function DiscoverPageContent() {
+  const searchParams = useSearchParams();
+  const urlFromQuery = searchParams.get("url");
+  const processedUrlRef = useRef<string | null>(null);
   const [sidebarSlot, setSidebarSlot] = useState<HTMLElement | null>(null);
   const [smartQuery, setSmartQuery] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
@@ -391,6 +409,15 @@ export default function DiscoverPage() {
     applySmartQuery(query);
     setUrlSearchError("");
   };
+
+  useEffect(() => {
+    if (!urlFromQuery || processedUrlRef.current === urlFromQuery) return;
+    processedUrlRef.current = urlFromQuery;
+    const decoded = decodeURIComponent(urlFromQuery);
+    setUnifiedSearchInput(decoded);
+    const normalizedUrl = /^https?:\/\//i.test(decoded.trim()) ? decoded.trim() : `https://${decoded.trim()}`;
+    buildInfluencerFromSocialUrl(normalizedUrl);
+  }, [urlFromQuery]);
 
   const countries = useMemo(
     () => ["All", ...new Set(Object.values(influencerMeta).map((meta) => meta.country))],

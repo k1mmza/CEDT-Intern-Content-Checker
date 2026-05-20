@@ -8,11 +8,11 @@ import { useUserStore } from "@/store/useUserStore";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setRole } = useUserStore();
+  const { signIn } = useUserStore();
   const [selectedRole, setSelectedRole] = useState<Role>("influencer");
 
   const handleSignIn = () => {
-    setRole(selectedRole);
+    signIn(selectedRole);
     router.push(selectedRole === "influencer" ? "/dashboard" : "/dashboard");
   };
 

@@ -61,6 +61,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
             <div className="flex items-center gap-3">
               <img src={avatarUrl} alt={`${influencer.name} profile`} className="h-12 w-12 rounded-full border border-slate-200" />
               <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-600">Creator media kit</p>
                 <p className="text-lg font-semibold text-slate-900">{influencer.name}</p>
                 <p className="text-xs text-slate-600">
                   @{influencer.name.toLowerCase().replace(/\s+/g, "")} • {meta.city}, {meta.country}
@@ -79,7 +80,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
 
         <div className="space-y-4 overflow-y-auto p-4 text-sm">
           <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Profile Summary</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Identity &amp; platforms</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {allPlatforms.map((platform) => (
                 <span key={platform} className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">
@@ -88,31 +89,31 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
               ))}
             </div>
             <p className="mt-2 text-xs text-slate-600">
-              <span className="font-semibold text-slate-800">Largest audience:</span> {mainFollowers.platform} ·{" "}
+              <span className="font-semibold text-slate-800">Primary footprint:</span> {mainFollowers.platform} ·{" "}
               {mainFollowers.followers.toLocaleString()} followers
             </p>
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
               <div className="rounded-lg bg-slate-50 p-2">
-                <p className="text-slate-500">Followers</p>
+                <p className="text-slate-500">Total reach</p>
                 <p className="font-semibold text-slate-900">{influencer.followers.toLocaleString()}</p>
               </div>
               <div className="rounded-lg bg-slate-50 p-2">
-                <p className="text-slate-500">Avg Views</p>
+                <p className="text-slate-500">Avg views</p>
                 <p className="font-semibold text-slate-900">{meta.averageViews.toLocaleString()}</p>
               </div>
               <div className="rounded-lg bg-slate-50 p-2">
-                <p className="text-slate-500">Engagement Rate</p>
+                <p className="text-slate-500">Engagement</p>
                 <p className="font-semibold text-slate-900">{influencer.engagementRate}%</p>
               </div>
               <div className="rounded-lg bg-slate-50 p-2">
-                <p className="text-slate-500">Growth Rate</p>
+                <p className="text-slate-500">Growth</p>
                 <p className="font-semibold text-slate-900">{meta.growthRate}%</p>
               </div>
             </div>
           </section>
 
           <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Performance Overview</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Performance benchmarks</p>
             <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
               <div className="rounded-lg bg-indigo-50 p-2">
                 <p className="text-indigo-600">Platform Score</p>
@@ -130,7 +131,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
           </section>
 
           <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Audience Insights</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Audience snapshot</p>
             <div className="mt-2 space-y-1 text-xs text-slate-700">
               <p>Gender mix: {meta.audienceGender}</p>
               <p>Age group: {meta.audienceAgeGroup}</p>
@@ -142,7 +143,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
           </section>
 
           <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Top Content Preview</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Content reel (preview)</p>
             <div className="mt-2 grid grid-cols-3 gap-2">
               {[1, 2, 3].map((item) => (
                 <div key={item} className="rounded-lg border border-slate-200 p-2 text-xs">
@@ -156,7 +157,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
           </section>
 
           <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Content Style & Keywords</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Niche, tone &amp; tags</p>
             <p className="mt-2 text-xs text-slate-700">Tone: {getTone(influencer.stylePresent)}</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {meta.keywords.map((word) => (
@@ -168,7 +169,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
           </section>
 
           <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Pricing & Cost Estimate</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Rate card &amp; estimates</p>
             <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
               <div className="rounded-lg bg-slate-50 p-2">
                 <p className="text-slate-500">Price / Post</p>
@@ -190,7 +191,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
           </section>
 
           <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Availability & Reliability</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Turnaround &amp; reliability</p>
             <div className="mt-2 space-y-1 text-xs text-slate-700">
               <p>Status: {meta.responseRate >= 75 ? "Available" : "Busy"}</p>
               <p>Response rate: {meta.responseRate}%</p>
@@ -199,7 +200,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
           </section>
 
           <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Past Collaborations</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Featured collaborations</p>
             <ul className="mt-2 space-y-1 text-xs text-slate-700">
               <li>GlowLab - Product seeding campaign</li>
               <li>Nova Retail - Seasonal launch bundle</li>
@@ -208,7 +209,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
           </section>
 
           <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">CTA</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Next step</p>
             <div className="mt-2 grid grid-cols-2 gap-2">
               <button type="button" className="rounded-lg bg-indigo-600 px-2 py-2 text-xs font-semibold text-white hover:bg-indigo-700">
                 Add to list
@@ -217,6 +218,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
                 Send Message
               </button>
             </div>
+            <p className="mt-2 text-[11px] text-slate-500">Request the full PDF kit or historical screenshots from the creator in chat.</p>
           </section>
         </div>
       </div>

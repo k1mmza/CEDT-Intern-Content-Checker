@@ -4,6 +4,12 @@ import { useCallback, useMemo, useState, type ReactNode } from "react";
 
 export type WorkPhase = "contact" | "brief" | "draft" | "work" | "payment";
 
+const PHASE_ORDER: WorkPhase[] = ["contact", "brief", "draft", "work", "payment"];
+
+export function isPhaseDone(phase: WorkPhase, currentPhase: WorkPhase): boolean {
+  return PHASE_ORDER.indexOf(phase) < PHASE_ORDER.indexOf(currentPhase);
+}
+
 const phaseDotClass: Record<WorkPhase, string> = {
   contact: "bg-violet-600",
   brief: "bg-sky-600",
@@ -143,7 +149,13 @@ const briefCampaignSeed: BriefCampaign[] = [
   },
 ];
 
-export function ProcessOfWorkPanel({ variant }: { variant: ProcessVariant }) {
+export function ProcessOfWorkPanel({
+  variant,
+  currentPhase,
+}: {
+  variant: ProcessVariant;
+  currentPhase?: WorkPhase;
+}) {
   const [active, setActive] = useState<WorkPhase | null>(null);
   const [drafts, setDrafts] = useState<DraftRow[]>(initialDrafts);
   const [selectedDraft, setSelectedDraft] = useState<DraftRow | null>(null);
@@ -196,22 +208,27 @@ export function ProcessOfWorkPanel({ variant }: { variant: ProcessVariant }) {
   );
 
   return (
-    <div className="space-y-3">
-      <h2 className="text-lg font-semibold text-slate-900">Process of work</h2>
-      <p className="text-xs text-slate-500">Track contract, brief, drafts, published work, and payout in one place.</p>
-      <ul className="space-y-2">
-        {steps.map((s) => (
-          <li key={s.id}>
-            <button
-              type="button"
-              onClick={() => setActive(s.id)}
-              className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-left text-sm transition hover:border-indigo-200 hover:bg-white"
-            >
-              <span className="font-semibold text-slate-800">{s.label}</span>
-              <span className="text-[11px] text-slate-500">{s.hint}</span>
-            </button>
-          </li>
-        ))}
+    <div>
+      <ul className="flex flex-wrap gap-2">
+        {steps.map((s) => {
+          const done = currentPhase ? isPhaseDone(s.id, currentPhase) : false;
+          return (
+            <li key={s.id} className="min-w-0 flex-1">
+              <button
+                type="button"
+                onClick={() => setActive(s.id)}
+                className={`flex w-full flex-col gap-0.5 rounded-xl border px-3 py-2 text-left text-sm transition ${
+                  done
+                    ? "border-emerald-200 bg-emerald-50 hover:border-emerald-300 hover:bg-emerald-100"
+                    : "border-slate-200 bg-slate-50/80 hover:border-indigo-200 hover:bg-white"
+                }`}
+              >
+                <span className={`text-xs font-semibold leading-tight sm:text-sm ${done ? "text-emerald-900" : "text-slate-800"}`}>{s.label}</span>
+                <span className={`text-[10px] leading-tight ${done ? "text-emerald-700" : "text-slate-500"}`}>{done ? "Done" : s.hint}</span>
+              </button>
+            </li>
+          );
+        })}
       </ul>
 
       <Modal open={active === "contact"} title="Agreement/Contract" onClose={close}>

@@ -52,7 +52,13 @@ const requirementFields: { key: keyof RequirementData; label: string }[] = [
 ];
 
 type BriefSubSection = "strategy" | "concept" | "briefBody";
-type StartMode = "none" | "prompt" | "aiQuestion";
+type StartMode = "none" | "prompt" | "form";
+
+function requirementInputPlaceholder(field: keyof RequirementData, label: string) {
+  if (field === "productLinkOrWebsite") return "https://…";
+  if (field === "ctaMessage") return "e.g. Shop now, link in bio";
+  return `Enter ${label.toLowerCase()}`;
+}
 
 const sectionAlias: Record<string, StepId | BriefSubSection> = {
   requirement: "requirement",
@@ -110,21 +116,6 @@ const myCampaignSeed: Campaign[] = [
       doDont: "Do: realistic goals. Dont: shame-based messaging.",
     },
   },
-];
-
-const aiQuestionSet: { key: keyof RequirementData; question: string; placeholder: string }[] = [
-  { key: "campaignName", question: "What is your campaign name?", placeholder: "e.g. Glow Summer Launch" },
-  { key: "objective", question: "What is the main campaign objective?", placeholder: "e.g. Increase sales by 20%" },
-  { key: "targetAudience", question: "Who is your target audience?", placeholder: "e.g. Women 20-35 in Bangkok" },
-  { key: "productInfo", question: "What product or service will be promoted?", placeholder: "e.g. Vitamin C serum bundle" },
-  { key: "contentAngle", question: "What content angle should creators use?", placeholder: "e.g. Before/after routine story" },
-  { key: "brandTone", question: "What brand tone should creators follow?", placeholder: "e.g. Friendly and trustworthy" },
-  { key: "ctaMessage", question: "What CTA message should be used?", placeholder: "e.g. Shop now via link in bio" },
-  { key: "productLinkOrWebsite", question: "What is the product link or website?", placeholder: "https://..." },
-  { key: "budget", question: "What is your budget?", placeholder: "e.g. $10,000" },
-  { key: "timeline", question: "What is your campaign timeline?", placeholder: "e.g. Jun 1 - Jul 15" },
-  { key: "kpi", question: "What KPI are you targeting?", placeholder: "e.g. Reach 2M, CTR 2%" },
-  { key: "doDont", question: "Any do and dont rules for creators?", placeholder: "e.g. Do: show usage. Dont: make medical claims." },
 ];
 
 function toBriefTemplate(data: RequirementData) {
@@ -205,8 +196,7 @@ export default function SmartPlanPage() {
   const [strategyText, setStrategyText] = useState("");
   const [conceptText, setConceptText] = useState("");
   const [briefText, setBriefText] = useState("");
-  const [aiQuestionIndex, setAiQuestionIndex] = useState(0);
-  const [aiAnswers, setAiAnswers] = useState<RequirementData>({
+  const [formDraft, setFormDraft] = useState<RequirementData>({
     campaignName: "",
     objective: "",
     contentAngle: "",
@@ -297,15 +287,13 @@ export default function SmartPlanPage() {
     setBriefText(template.briefBody);
   };
 
-  const currentAiQuestion = aiQuestionSet[aiQuestionIndex];
-
-  const updateAiAnswer = (value: string) => {
-    setAiAnswers((prev) => ({ ...prev, [currentAiQuestion.key]: value }));
+  const updateFormDraft = (field: keyof RequirementData, value: string) => {
+    setFormDraft((prev) => ({ ...prev, [field]: value }));
   };
 
-  const finishAiQuestionFlow = () => {
-    setRequirements(aiAnswers);
-    const template = toBriefTemplate(aiAnswers);
+  const finishFormFlow = () => {
+    setRequirements(formDraft);
+    const template = toBriefTemplate(formDraft);
     setStrategyText(template.strategy);
     setConceptText(template.concept);
     setBriefText(template.briefBody);
@@ -394,7 +382,18 @@ export default function SmartPlanPage() {
 
       {viewMode === "create" && !isPlannerVisible && (
         <div className="mx-auto w-full max-w-3xl rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-slate-700">Start from</span>
+            <button
+              type="button"
+              onClick={() => setStartMode("form")}
+              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                startMode === "form" ? "bg-indigo-600 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-100"
+              }`}
+            >
+              Form
+            </button>
+            <span className="text-sm text-slate-700">or</span>
             <button
               type="button"
               onClick={() => setStartMode("prompt")}
@@ -404,20 +403,11 @@ export default function SmartPlanPage() {
             >
               Prompt command
             </button>
-            <button
-              type="button"
-              onClick={() => setStartMode("aiQuestion")}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                startMode === "aiQuestion" ? "bg-indigo-600 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-100"
-              }`}
-            >
-              AI asks questions
-            </button>
           </div>
 
           {startMode === "none" && (
             <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
-              Choose how to start Smart Plan: use a prompt command or let AI ask campaign questions.
+              Choose how to start Smart Plan: fill the requirement form or use a prompt command.
             </p>
           )}
 
@@ -459,24 +449,25 @@ export default function SmartPlanPage() {
             </>
           )}
 
-          {startMode === "aiQuestion" && (
+          {startMode === "form" && (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-medium text-slate-500">
-                  Question {aiQuestionIndex + 1} of {aiQuestionSet.length}
-                </p>
-                <label htmlFor="ai-question-input" className="mt-1 block text-sm font-medium text-slate-700">
-                  {currentAiQuestion.question}
-                </label>
+                <h2 className="text-base font-semibold text-slate-900">Requirement</h2>
+                <p className="mt-1 text-xs text-slate-500">Same fields as the planner requirement step. Fill what you know; you can edit later.</p>
               </div>
-              <textarea
-                id="ai-question-input"
-                rows={4}
-                value={aiAnswers[currentAiQuestion.key]}
-                onChange={(event) => updateAiAnswer(event.target.value)}
-                placeholder={currentAiQuestion.placeholder}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-              />
+              <div className="space-y-3">
+                {requirementFields.map((field) => (
+                  <label key={field.key} className="block">
+                    <span className="mb-1 block text-xs font-medium text-slate-600">{field.label}</span>
+                    <input
+                      value={formDraft[field.key]}
+                      onChange={(event) => updateFormDraft(field.key, event.target.value)}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                      placeholder={requirementInputPlaceholder(field.key, field.label)}
+                    />
+                  </label>
+                ))}
+              </div>
               <div className="flex items-center justify-between">
                 <button
                   type="button"
@@ -485,33 +476,13 @@ export default function SmartPlanPage() {
                 >
                   My Campaign
                 </button>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setAiQuestionIndex((prev) => Math.max(0, prev - 1))}
-                    disabled={aiQuestionIndex === 0}
-                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition enabled:hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Back
-                  </button>
-                  {aiQuestionIndex < aiQuestionSet.length - 1 ? (
-                    <button
-                      type="button"
-                      onClick={() => setAiQuestionIndex((prev) => Math.min(aiQuestionSet.length - 1, prev + 1))}
-                      className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
-                    >
-                      Next Question
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={finishAiQuestionFlow}
-                      className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
-                    >
-                      Generate Smart Plan
-                    </button>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  onClick={finishFormFlow}
+                  className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                >
+                  Generate Smart Plan
+                </button>
               </div>
             </div>
           )}
@@ -551,13 +522,7 @@ export default function SmartPlanPage() {
                     value={requirements[field.key]}
                     onChange={(event) => updateRequirement(field.key, event.target.value)}
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                    placeholder={
-                      field.key === "productLinkOrWebsite"
-                        ? "https://…"
-                        : field.key === "ctaMessage"
-                          ? "e.g. Shop now, link in bio"
-                          : `Enter ${field.label.toLowerCase()}`
-                    }
+                    placeholder={requirementInputPlaceholder(field.key, field.label)}
                   />
                 </label>
               ))}

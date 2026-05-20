@@ -16,10 +16,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isLandingPage) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-6">
-        <Navigation />
+      <main className="flex min-h-screen flex-col">
+        <div className="mx-auto w-full max-w-6xl px-4 pt-6">
+          <Navigation />
+        </div>
         <div className="flex-1">{children}</div>
-        <SiteFooter />
+        <div className="mx-auto w-full max-w-6xl px-4 pb-6">
+          <SiteFooter />
+        </div>
       </main>
     );
   }
@@ -37,7 +41,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </aside>
         <section>{children}</section>
       </div>
-      <SiteFooter />
     </main>
   );
 }

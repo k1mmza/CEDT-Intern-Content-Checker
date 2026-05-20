@@ -8,6 +8,9 @@ interface UserState {
   name: string;
   email: string;
   role: Role;
+  /** Set true after sign-in so shell UI (e.g. footer) can hide for the session. */
+  isLoggedIn: boolean;
+  signIn: (role: Role) => void;
   setRole: (role: Role) => void;
   logout: () => void;
 }
@@ -25,9 +28,11 @@ export const useUserStore = create<UserState>()(
       name: "Sarah Chen",
       email: "sarah@agency.com",
       role: "agency",
+      isLoggedIn: false,
+      signIn: (role) => set({ role, name: defaultNameForRole(role), isLoggedIn: true }),
       setRole: (role) => set({ role, name: defaultNameForRole(role) }),
       logout: () => {
-        set({ role: "agency", name: defaultNameForRole("agency") });
+        set({ role: "agency", name: defaultNameForRole("agency"), isLoggedIn: false });
         if (typeof window !== "undefined") {
           window.localStorage.removeItem("influapp-user");
         }

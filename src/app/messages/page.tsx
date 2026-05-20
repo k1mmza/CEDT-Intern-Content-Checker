@@ -39,7 +39,7 @@ function InfluencerMessagesView() {
         <p className="mt-1 text-sm text-indigo-100">Manage active conversations, files, and campaign workflow in one place.</p>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[280px_1fr_280px]">
+      <div className="grid gap-4 xl:grid-cols-[280px_1fr]">
         <aside className="rounded-2xl bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">Conversations</h2>
@@ -76,39 +76,44 @@ function InfluencerMessagesView() {
         </aside>
 
         <article className="rounded-2xl bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-900">GlowLab</p>
-                <p className="text-xs text-slate-500">Summer Skincare Campaign</p>
+          <div className="border-b border-slate-100 pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">GlowLab</p>
+                  <p className="text-xs text-slate-500">Summer Skincare Campaign</p>
+                </div>
+                <WorkStatusIndicator phase={openPhase} className="hidden sm:inline-flex" />
               </div>
-              <WorkStatusIndicator phase={openPhase} className="hidden sm:inline-flex" />
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <WorkStatusIndicator phase={openPhase} className="sm:hidden" />
+                <span className="text-xs text-emerald-600">Online</span>
+              </div>
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-1">
-              <WorkStatusIndicator phase={openPhase} className="sm:hidden" />
-              <span className="text-xs text-emerald-600">Online</span>
+            <div className="mt-4">
+              <ProcessOfWorkPanel variant="influencer" currentPhase={openPhase} />
             </div>
           </div>
 
           <div className="space-y-3 py-4">
             <p className="text-center text-xs text-slate-400">Today</p>
 
-            <div className="max-w-[80%] rounded-2xl rounded-tl-md bg-slate-100 px-3 py-2 text-sm text-slate-700">
+            <div className="w-fit max-w-[80%] rounded-2xl rounded-tl-md bg-slate-100 px-3 py-2 text-sm text-slate-700">
               Hi Lina, can you submit the first draft by Friday 5 PM?
               <p className="mt-1 text-[11px] text-slate-400">10:04</p>
             </div>
 
-            <div className="ml-auto max-w-[80%] rounded-2xl rounded-tr-md bg-indigo-600 px-3 py-2 text-sm text-white">
+            <div className="ml-auto w-fit max-w-[80%] rounded-2xl rounded-tr-md bg-indigo-600 px-3 py-2 text-sm text-white">
               Sure! I&apos;ll send the TikTok draft tomorrow for early review.
               <p className="mt-1 text-[11px] text-indigo-200">10:07 • Seen</p>
             </div>
 
-            <div className="max-w-[80%] rounded-2xl rounded-tl-md bg-slate-100 px-3 py-2 text-sm text-slate-700">
+            <div className="w-fit max-w-[80%] rounded-2xl rounded-tl-md bg-slate-100 px-3 py-2 text-sm text-slate-700">
               Great. I&apos;ve attached the updated brief and do/don&apos;t list.
               <p className="mt-1 text-[11px] text-slate-400">10:08</p>
             </div>
 
-            <div className="max-w-[70%] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            <div className="w-fit max-w-[70%] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
               📎 Updated_Brief_v2.pdf
               <p className="text-[11px] text-slate-500">PDF • 1.2 MB</p>
             </div>
@@ -119,10 +124,6 @@ function InfluencerMessagesView() {
             <button className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Send</button>
           </div>
         </article>
-
-        <aside className="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
-          <ProcessOfWorkPanel variant="influencer" />
-        </aside>
       </div>
     </section>
   );
@@ -138,7 +139,7 @@ function BrandMessagesView() {
         <p className="mt-1 text-sm text-indigo-100">Chat with influencers, filter by campaign, and keep briefs in context.</p>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[280px_1fr_280px]">
+      <div className="grid gap-4 xl:grid-cols-[280px_1fr]">
         <aside className="rounded-2xl bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">Conversations</h2>
@@ -175,34 +176,39 @@ function BrandMessagesView() {
         </aside>
 
         <article className="rounded-2xl bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-900">Lina Park</p>
-                <p className="text-xs text-slate-500">Summer Skincare Campaign</p>
+          <div className="border-b border-slate-100 pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">Lina Park</p>
+                  <p className="text-xs text-slate-500">Summer Skincare Campaign</p>
+                </div>
+                <WorkStatusIndicator phase={openPhase} className="hidden sm:inline-flex" />
               </div>
-              <WorkStatusIndicator phase={openPhase} className="hidden sm:inline-flex" />
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <WorkStatusIndicator phase={openPhase} className="sm:hidden" />
+                <span className="text-xs text-emerald-600">Active</span>
+              </div>
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-1">
-              <WorkStatusIndicator phase={openPhase} className="sm:hidden" />
-              <span className="text-xs text-emerald-600">Active</span>
+            <div className="mt-4">
+              <ProcessOfWorkPanel variant="brand" currentPhase={openPhase} />
             </div>
           </div>
 
           <div className="space-y-3 py-4">
             <p className="text-center text-xs text-slate-400">Today</p>
 
-            <div className="ml-auto max-w-[80%] rounded-2xl rounded-tr-md bg-indigo-600 px-3 py-2 text-sm text-white">
+            <div className="ml-auto w-fit max-w-[80%] rounded-2xl rounded-tr-md bg-indigo-600 px-3 py-2 text-sm text-white">
               Hi Lina, can you submit the first draft by Friday 5 PM?
               <p className="mt-1 text-[11px] text-indigo-200">10:04</p>
             </div>
 
-            <div className="max-w-[80%] rounded-2xl rounded-tl-md bg-slate-100 px-3 py-2 text-sm text-slate-700">
+            <div className="w-fit max-w-[80%] rounded-2xl rounded-tl-md bg-slate-100 px-3 py-2 text-sm text-slate-700">
               Yes—sending the TikTok draft tomorrow morning for your review.
               <p className="mt-1 text-[11px] text-slate-400">10:07</p>
             </div>
 
-            <div className="ml-auto max-w-[80%] rounded-2xl rounded-tr-md bg-indigo-600 px-3 py-2 text-sm text-white">
+            <div className="ml-auto w-fit max-w-[80%] rounded-2xl rounded-tr-md bg-indigo-600 px-3 py-2 text-sm text-white">
               Attached: updated brief + do/don&apos;t list. Ping me if anything is unclear.
               <p className="mt-1 text-[11px] text-indigo-200">10:10</p>
             </div>
@@ -213,14 +219,6 @@ function BrandMessagesView() {
             <button className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Send</button>
           </div>
         </article>
-
-        <aside className="space-y-4 rounded-2xl bg-white p-4 shadow-sm">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900">Filter</h2>
-            <p className="mt-1 text-xs text-slate-600">Campaign: Summer Skincare (demo)</p>
-          </div>
-          <ProcessOfWorkPanel variant="brand" />
-        </aside>
       </div>
     </section>
   );
