@@ -1,5 +1,6 @@
 "use client";
 
+import { fetchYouTubeInfluencer } from "@/app/actions/youtube";
 import { InfluencerCard } from "@/components/influencer-card";
 import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
 import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
@@ -170,6 +171,7 @@ function DiscoverPageContent() {
   const [selectedInfluencerId, setSelectedInfluencerId] = useState<string | null>(null);
   const [unifiedSearchInput, setUnifiedSearchInput] = useState("");
   const [urlSearchError, setUrlSearchError] = useState("");
+  const [isSearchingUrl, setIsSearchingUrl] = useState(false);
   const [generatedInfluencer, setGeneratedInfluencer] = useState<Influencer | null>(null);
   const [generatedInfluencerMeta, setGeneratedInfluencerMeta] = useState<InfluencerMeta | null>(null);
 
@@ -309,7 +311,7 @@ function DiscoverPageContent() {
     return Math.round(min + normalized * (max - min));
   };
 
-  const buildInfluencerFromSocialUrl = (input: string) => {
+  const buildInfluencerFromSocialUrl = async (input: string) => {
     if (!input.trim()) {
       setUrlSearchError("Please enter a social profile URL.");
       return;
@@ -329,67 +331,122 @@ function DiscoverPageContent() {
       return;
     }
 
-    const segments = parsed.pathname.split("/").filter(Boolean);
-    const handle = segments[segments.length - 1] ?? "creator";
-    const cleanedHandle = handle.replace(/^@/, "").replace(/[^a-zA-Z0-9._-]/g, "");
-    const displayName = cleanedHandle
-      ? cleanedHandle
-          .replace(/[._-]+/g, " ")
-          .trim()
-          .replace(/\b\w/g, (char) => char.toUpperCase())
-      : "New Creator";
-    const seed = `${platform}-${cleanedHandle || "creator"}-${parsed.hostname}`;
-    const followers = makeNumberFromSeed(seed, 20000, 950000);
-    const engagementRate = Number((makeNumberFromSeed(seed + "er", 2, 12) + Math.random() * 0.4).toFixed(1));
-    const ratePerPost = makeNumberFromSeed(seed + "rate", 250, 3200);
-    const performanceScore = makeNumberFromSeed(seed + "score", 70, 96);
-    const averageViews = makeNumberFromSeed(seed + "views", 15000, 280000);
-    const growthRate = Number((makeNumberFromSeed(seed + "growth", 1, 10) + Math.random() * 0.5).toFixed(1));
-    const qualityScore = makeNumberFromSeed(seed + "quality", 72, 95);
-    const responseRate = makeNumberFromSeed(seed + "response", 62, 92);
-
-    const inferredCategory =
-      displayName.toLowerCase().includes("tech")
-        ? "Tech"
-        : displayName.toLowerCase().includes("fit")
-          ? "Fitness"
-          : displayName.toLowerCase().includes("travel")
-            ? "Travel"
-            : "Lifestyle";
-
-    const nextInfluencer: Influencer = {
-      id: `url-derived-${Date.now()}`,
-      name: displayName,
-      platforms: [platform],
-      followers,
-      followersByPlatform: { [platform]: followers },
-      avgViewsByPlatform: { [platform]: averageViews },
-      engagementRate,
-      category: inferredCategory,
-      performanceScore,
-      ratePerPost,
-      stylePresent: ["Storytelling", "Review"]
-    };
-
-    const nextMeta: InfluencerMeta = {
-      country: "Thailand",
-      city: "Bangkok",
-      extraPlatforms: [],
-      audienceCountryPercent: makeNumberFromSeed(seed + "audpct", 45, 85),
-      averageViews,
-      growthRate,
-      keywords: [inferredCategory.toLowerCase(), platform.toLowerCase(), "creator"],
-      intents: ["Awareness", "Engagement"],
-      audienceGender: "Mixed",
-      audienceAgeGroup: "25-34",
-      qualityScore,
-      responseRate
-    };
-
-    setGeneratedInfluencer(nextInfluencer);
-    setGeneratedInfluencerMeta(nextMeta);
-    setSelectedInfluencerId(nextInfluencer.id);
     setUrlSearchError("");
+    setIsSearchingUrl(true);
+
+    try {
+      let finalInfluencer: Influencer;
+      let finalMeta: InfluencerMeta;
+
+      if (platform === "YouTube") {
+        const result = await fetchYouTubeInfluencer(input.trim());
+        if (result.error || !result.data) {
+          setUrlSearchError(result.error || "Failed to fetch YouTube data.");
+          setIsSearchingUrl(false);
+          return;
+        }
+
+        const { data } = result;
+        finalInfluencer = {
+          id: `youtube-${data.id}`,
+          name: data.name,
+          platforms: ["YouTube"],
+          followers: data.followers,
+          followersByPlatform: { YouTube: data.followers },
+          avgViewsByPlatform: { YouTube: data.avgViews },
+          engagementRate: Number(((data.avgViews / data.followers) * 100).toFixed(1)) || 0,
+          category: "Content Creator",
+          performanceScore: 85,
+          ratePerPost: Math.round(data.avgViews * 0.05) || 500,
+          stylePresent: ["Video", "Storytelling"],
+          bio: data.contentSummary,
+          profilePicture: data.thumbnail,
+          sampleVideos: data.videos
+        };
+
+        finalMeta = {
+          country: data.country || "Global",
+          city: data.country === "TH" ? "Bangkok" : "Various",
+          extraPlatforms: [],
+          audienceCountryPercent: 70,
+          averageViews: data.avgViews,
+          growthRate: 5.0,
+          keywords: data.tags.length > 0 ? data.tags : ["youtube", "creator", "video"],
+          intents: ["Awareness", "Engagement"],
+          audienceGender: "Mixed",
+          audienceAgeGroup: "25-34",
+          qualityScore: 90,
+          responseRate: 80
+        };
+      } else {
+        // Fallback to mock for other platforms
+        const segments = parsed.pathname.split("/").filter(Boolean);
+        const handle = segments[segments.length - 1] ?? "creator";
+        const cleanedHandle = handle.replace(/^@/, "").replace(/[^a-zA-Z0-9._-]/g, "");
+        const displayName = cleanedHandle
+          ? cleanedHandle
+              .replace(/[._-]+/g, " ")
+              .trim()
+              .replace(/\b\w/g, (char) => char.toUpperCase())
+          : "New Creator";
+        const seed = `${platform}-${cleanedHandle || "creator"}-${parsed.hostname}`;
+        const followers = makeNumberFromSeed(seed, 20000, 950000);
+        const engagementRate = Number((makeNumberFromSeed(seed + "er", 2, 12) + Math.random() * 0.4).toFixed(1));
+        const ratePerPost = makeNumberFromSeed(seed + "rate", 250, 3200);
+        const performanceScore = makeNumberFromSeed(seed + "score", 70, 96);
+        const averageViews = makeNumberFromSeed(seed + "views", 15000, 280000);
+        const growthRate = Number((makeNumberFromSeed(seed + "growth", 1, 10) + Math.random() * 0.5).toFixed(1));
+        const qualityScore = makeNumberFromSeed(seed + "quality", 72, 95);
+        const responseRate = makeNumberFromSeed(seed + "response", 62, 92);
+
+        const inferredCategory =
+          displayName.toLowerCase().includes("tech")
+            ? "Tech"
+            : displayName.toLowerCase().includes("fit")
+              ? "Fitness"
+              : displayName.toLowerCase().includes("travel")
+                ? "Travel"
+                : "Lifestyle";
+
+        finalInfluencer = {
+          id: `url-derived-${Date.now()}`,
+          name: displayName,
+          platforms: [platform],
+          followers,
+          followersByPlatform: { [platform]: followers },
+          avgViewsByPlatform: { [platform]: averageViews },
+          engagementRate,
+          category: inferredCategory,
+          performanceScore,
+          ratePerPost,
+          stylePresent: ["Storytelling", "Review"]
+        };
+
+        finalMeta = {
+          country: "Thailand",
+          city: "Bangkok",
+          extraPlatforms: [],
+          audienceCountryPercent: makeNumberFromSeed(seed + "audpct", 45, 85),
+          averageViews,
+          growthRate,
+          keywords: [inferredCategory.toLowerCase(), platform.toLowerCase(), "creator"],
+          intents: ["Awareness", "Engagement"],
+          audienceGender: "Mixed",
+          audienceAgeGroup: "25-34",
+          qualityScore,
+          responseRate
+        };
+      }
+
+      setGeneratedInfluencer(finalInfluencer);
+      setGeneratedInfluencerMeta(finalMeta);
+      setSelectedInfluencerId(finalInfluencer.id);
+    } catch (err) {
+      console.error("Error in buildInfluencerFromSocialUrl:", err);
+      setUrlSearchError("An error occurred while processing the URL.");
+    } finally {
+      setIsSearchingUrl(false);
+    }
   };
 
   const handleUnifiedSearch = () => {
@@ -924,11 +981,11 @@ function DiscoverPageContent() {
               <button
                 type="button"
                 onClick={handleUnifiedSearch}
-                className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                disabled={isSearchingUrl}
+                className="flex min-w-[100px] items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:bg-indigo-300"
               >
-                Search
-              </button>
-            </div>
+                {isSearchingUrl ? "Searching…" : "Search"}
+              </button>            </div>
             {urlSearchError && <p className="text-xs text-rose-600">{urlSearchError}</p>}
             <p className="text-xs text-slate-500">Tip: Paste a creator URL to generate profile detail, or type keywords to apply smart filters.</p>
           </div>

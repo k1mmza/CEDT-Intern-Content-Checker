@@ -49,11 +49,17 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
   const consistencyScore = Math.min(100, Math.round((meta.growthRate * 6 + influencer.engagementRate * 5) / 2));
   const estimatedCpm = Math.max(1, Math.round((influencer.ratePerPost / Math.max(meta.averageViews, 1)) * 1000));
   const estimatedCostPerEngagement = (influencer.ratePerPost / Math.max(meta.averageViews * (influencer.engagementRate / 100), 1)).toFixed(2);
-  const avatarUrl = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
+  const avatarUrl = influencer.profilePicture || `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
   const allPlatforms = [...influencer.platforms, ...meta.extraPlatforms];
   const mainFollowers = getMainFollowerPlatform(influencer);
   const topByViews = getTopAvgViewsPlatform(influencer);
-  const showcaseEmbed = getShowcaseDemoEmbed(topByViews.platform, influencer.id);
+  
+  // Use real YouTube video if available, otherwise fallback to mock embed
+  const hasRealYoutubeVideo = topByViews.platform === "YouTube" && influencer.sampleVideos && influencer.sampleVideos.length > 0;
+  const showcaseEmbed = hasRealYoutubeVideo 
+    ? { kind: "iframe", title: influencer.sampleVideos![0].title, src: `https://www.youtube.com/embed/${influencer.sampleVideos![0].id}` }
+    : getShowcaseDemoEmbed(topByViews.platform, influencer.id);
+
   const headlineAvgViews = topByViews.avgViews > 0 ? topByViews.avgViews : meta.averageViews;
 
   return (
@@ -62,7 +68,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
         <header className="sticky top-0 z-10 border-b border-slate-100 bg-white/95 p-4 backdrop-blur">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <img src={avatarUrl} alt={`${influencer.name} profile`} className="h-12 w-12 rounded-full border border-slate-200" />
+              <img src={avatarUrl} alt={`${influencer.name} profile`} className="h-12 w-12 rounded-full border border-slate-200 object-cover" />
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-600">Creator media kit</p>
                 <p className="text-lg font-semibold text-slate-900">{influencer.name}</p>
@@ -88,7 +94,9 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
               <span className="rounded-full bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white">{topByViews.platform}</span>
               <span className="text-xs text-slate-600">~{headlineAvgViews.toLocaleString()} avg views on this platform</span>
             </div>
-            <p className="mt-1 text-[11px] text-slate-500">Demo sample video for this platform — not this creator’s real post.</p>
+            <p className="mt-1 text-[11px] text-slate-500">
+              {hasRealYoutubeVideo ? "Latest video from this creator." : "Demo sample video for this platform — not this creator’s real post."}
+            </p>
             {showcaseEmbed.kind === "iframe" ? (
               <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-black shadow-inner">
                 <div className="relative aspect-video w-full">
@@ -122,6 +130,12 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
                 </span>
               ))}
             </div>
+            {influencer.bio && (
+              <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50/50 p-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Primary focus</p>
+                <p className="mt-1 text-xs italic text-slate-700">"{influencer.bio}"</p>
+              </div>
+            )}
             <p className="mt-2 text-xs text-slate-600">
               <span className="font-semibold text-slate-800">Primary footprint:</span> {mainFollowers.platform} ·{" "}
               {mainFollowers.followers.toLocaleString()} followers
@@ -179,14 +193,26 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
           <section className="rounded-xl border border-slate-200 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Content reel (preview)</p>
             <div className="mt-2 grid grid-cols-3 gap-2">
-              {[1, 2, 3].map((item) => (
-                <div key={item} className="rounded-lg border border-slate-200 p-2 text-xs">
-                  <div className="mb-2 h-12 rounded bg-slate-100" />
-                  <p className="font-medium text-slate-800">Top Post #{item}</p>
-                  <p className="text-slate-600">{Math.round(meta.averageViews * (1.2 - item * 0.1)).toLocaleString()} views</p>
-                  <p className="text-slate-600">{Math.round(meta.averageViews * 0.03).toLocaleString()} likes</p>
-                </div>
-              ))}
+              {influencer.sampleVideos && influencer.sampleVideos.length > 0 ? (
+                influencer.sampleVideos.slice(0, 3).map((video) => (
+                  <div key={video.id} className="group relative flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-1.5 transition hover:bg-white">
+                    <div className="relative mb-2 aspect-video overflow-hidden rounded bg-slate-200">
+                      <img src={video.thumbnail} alt={video.title} className="h-full w-full object-cover transition duration-300 group-hover:scale-110" />
+                    </div>
+                    <p className="line-clamp-2 min-h-[32px] text-[10px] font-medium text-slate-800">{video.title}</p>
+                    <p className="mt-1 text-[10px] text-slate-500">{video.viewCount.toLocaleString()} views</p>
+                  </div>
+                ))
+              ) : (
+                [1, 2, 3].map((item) => (
+                  <div key={item} className="rounded-lg border border-slate-200 p-2 text-xs">
+                    <div className="mb-2 h-12 rounded bg-slate-100" />
+                    <p className="font-medium text-slate-800">Top Post #{item}</p>
+                    <p className="text-slate-600">{Math.round(meta.averageViews * (1.2 - item * 0.1)).toLocaleString()} views</p>
+                    <p className="text-slate-600">{Math.round(meta.averageViews * 0.03).toLocaleString()} likes</p>
+                  </div>
+                ))
+              )}
             </div>
           </section>
 

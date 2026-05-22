@@ -48,7 +48,7 @@ interface InfluencerCardProps {
 }
 
 export function InfluencerCard({ influencer, isActive = false, onSelect }: InfluencerCardProps) {
-  const avatarUrl = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
+  const avatarUrl = influencer.profilePicture || `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
   const main = getMainFollowerPlatform(influencer);
   const presentationTags = Array.from(
     new Set([influencer.category, ...influencer.stylePresent].filter(Boolean)),
