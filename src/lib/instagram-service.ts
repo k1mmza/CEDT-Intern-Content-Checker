@@ -111,7 +111,14 @@ export async function getInstagramProfile(username: string): Promise<InstagramPr
 
 export async function getInstagramMedias(username: string): Promise<InstagramMediaData[]> {
   try {
-    const data = await fetchFromRapidAPI('/media', { username });
+    // Try /user/media first
+    let data;
+    try {
+      data = await fetchFromRapidAPI('/user/media', { username });
+    } catch (e) {
+      console.warn("Endpoint /user/media failed, trying /user/posts...");
+      data = await fetchFromRapidAPI('/user/posts', { username });
+    }
     
     const items = data.data?.items || data.result?.items || data.items || data.edge_owner_to_timeline_media?.edges?.map((e: any) => e.node) || [];
     console.log(`Instagram Medias found for ${username}: ${items.length} items`);
