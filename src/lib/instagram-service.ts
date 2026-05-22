@@ -110,28 +110,28 @@ export async function getInstagramProfile(username: string): Promise<InstagramPr
 }
 
 export async function getInstagramMedias(username: string): Promise<InstagramMediaData[]> {
-  const endpoints = ['/v1/posts', '/v1/user/medias', '/v1/user/posts', '/v1/reels', '/user/media', '/user/posts'];
-  let data = null;
-  let lastError = null;
+  try {
+    const endpoints = ['/v1/posts', '/v1/user/medias', '/v1/user/posts', '/v1/reels', '/user/media', '/user/posts'];
+    let data = null;
 
-  for (const endpoint of endpoints) {
-    try {
-      console.log(`Trying Instagram media endpoint: ${endpoint}`);
-      data = await fetchFromRapidAPI(endpoint, { username });
-      if (data) break;
-    } catch (e) {
-      console.warn(`Endpoint ${endpoint} failed.`);
-      lastError = e;
+    for (const endpoint of endpoints) {
+      try {
+        console.log(`Trying Instagram media endpoint: ${endpoint}`);
+        data = await fetchFromRapidAPI(endpoint, { username });
+        if (data) break;
+      } catch (e) {
+        console.warn(`Endpoint ${endpoint} failed.`);
+      }
     }
-  }
 
-  if (!data) {
-    console.error("All Instagram media endpoints failed.");
-    return [];
-  }
+    if (!data) {
+      console.error("All Instagram media endpoints failed.");
+      return [];
+    }
+      
+    const items = data.data?.items || data.result?.items || data.items || data.edge_owner_to_timeline_media?.edges?.map((e: any) => e.node) || [];
+    console.log(`Instagram Medias found for ${username}: ${items.length} items`);
     
-  const items = data.data?.items || data.result?.items || data.items || data.edge_owner_to_timeline_media?.edges?.map((e: any) => e.node) || [];
-  console.log(`Instagram Medias found for ${username}: ${items.length} items`);
     if (items.length > 0) {
       console.log("SAMPLE MEDIA ITEM KEYS:", Object.keys(items[0]));
       console.log("SAMPLE MEDIA ITEM (first 200 chars):", JSON.stringify(items[0]).slice(0, 200));
