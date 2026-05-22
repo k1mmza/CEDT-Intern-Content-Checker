@@ -57,7 +57,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
   // Use real YouTube video if available, otherwise fallback to mock embed
   const hasRealYoutubeVideo = topByViews.platform === "YouTube" && influencer.sampleVideos && influencer.sampleVideos.length > 0;
   const showcaseEmbed = hasRealYoutubeVideo 
-    ? { kind: "iframe", title: influencer.sampleVideos![0].title, src: `https://www.youtube.com/embed/${influencer.sampleVideos![0].id}` }
+    ? { kind: "iframe" as const, title: influencer.sampleVideos![0].title, src: `https://www.youtube.com/embed/${influencer.sampleVideos![0].id}` }
     : getShowcaseDemoEmbed(topByViews.platform, influencer.id);
 
   const headlineAvgViews = topByViews.avgViews > 0 ? topByViews.avgViews : meta.averageViews;

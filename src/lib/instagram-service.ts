@@ -49,10 +49,16 @@ export function extractInstagramUsername(url: string): string | null {
   try {
     const parsed = new URL(url);
     const pathname = parsed.pathname;
-    // Handle instagram.com/username/ or instagram.com/username
     const segments = pathname.split('/').filter(Boolean);
-    if (segments.length > 0) {
-      return segments[0].replace('@', '');
+    
+    // Ignore common non-profile segments
+    const ignoreList = ['reels', 'p', 'stories', 'explore', 'direct'];
+    
+    for (const segment of segments) {
+      const clean = segment.replace('@', '');
+      if (!ignoreList.includes(clean.toLowerCase()) && clean.length > 0) {
+        return clean;
+      }
     }
     return null;
   } catch {
@@ -63,21 +69,26 @@ export function extractInstagramUsername(url: string): string | null {
 export async function getInstagramProfile(username: string): Promise<InstagramProfileData | null> {
   try {
     const data = await fetchFromRapidAPI('/v1/user/info', { username });
-    // Note: The actual response structure of Instagram Looter might vary slightly.
-    // Based on common RapidAPI patterns, it usually returns a 'result' or 'data' object.
-    const user = data.data || data.result || data;
+    console.log("Instagram API Response (Profile):", JSON.stringify(data).slice(0, 500));
+    
+    const user = data.data || data.result || (data.username ? data : null);
+    
+    if (!user || !user.username) {
+      console.warn("Instagram API returned empty or invalid user data.");
+      return null;
+    }
     
     return {
-      id: user.id || user.pk,
+      id: String(user.id || user.pk || ""),
       username: user.username,
-      full_name: user.full_name,
-      biography: user.biography,
-      profile_pic_url: user.profile_pic_url_hd || user.profile_pic_url,
-      follower_count: user.follower_count,
-      following_count: user.following_count,
-      media_count: user.media_count,
-      is_private: user.is_private,
-      is_verified: user.is_verified
+      full_name: user.full_name || user.username,
+      biography: user.biography || "",
+      profile_pic_url: user.profile_pic_url_hd || user.profile_pic_url || "",
+      follower_count: user.follower_count || 0,
+      following_count: user.following_count || 0,
+      media_count: user.media_count || 0,
+      is_private: !!user.is_private,
+      is_verified: !!user.is_verified
     };
   } catch (error) {
     console.error("Error fetching Instagram profile:", error);
@@ -88,17 +99,24 @@ export async function getInstagramProfile(username: string): Promise<InstagramPr
 export async function getInstagramMedias(username: string): Promise<InstagramMediaData[]> {
   try {
     const data = await fetchFromRapidAPI('/v1/user/medias', { username });
+    console.log("Instagram API Response (Medias):", JSON.stringify(data).slice(0, 500));
+    
     const items = data.data?.items || data.result?.items || data.items || [];
     
+    if (!Array.isArray(items)) {
+      console.warn("Instagram API returned non-array media items.");
+      return [];
+    }
+    
     return items.map((item: any) => ({
-      id: item.id || item.pk,
-      shortcode: item.code,
-      display_url: item.image_versions2?.candidates?.[0]?.url || item.thumbnail_url,
+      id: String(item.id || item.pk || ""),
+      shortcode: item.code || "",
+      display_url: item.image_versions2?.candidates?.[0]?.url || item.thumbnail_url || "",
       video_url: item.video_versions?.[0]?.url,
       is_video: item.media_type === 2,
       caption: item.caption?.text || "",
-      like_count: item.like_count,
-      comment_count: item.comment_count
+      like_count: item.like_count || 0,
+      comment_count: item.comment_count || 0
     }));
   } catch (error) {
     console.error("Error fetching Instagram medias:", error);
