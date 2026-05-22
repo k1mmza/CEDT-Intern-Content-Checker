@@ -382,33 +382,36 @@ function DiscoverPageContent() {
       } else if (platform === "Instagram") {
         const result = await fetchInstagramInfluencer(input.trim());
         if (result.error || !result.data) {
-          setUrlSearchError(result.error || "Failed to fetch Instagram data.");
+          setUrlSearchError(result.error || "Failed to fetch Instagram data. The account might be private or the API key is invalid.");
           setIsSearchingUrl(false);
           return;
         }
 
         const { data } = result;
-        const avgViews = Math.round(data.medias.reduce((acc: number, m: any) => acc + m.viewCount, 0) / (data.medias.length || 1));
+        const medias = Array.isArray(data.medias) ? data.medias : [];
+        const avgViews = medias.length > 0 
+          ? Math.round(medias.reduce((acc: number, m: any) => acc + (m.viewCount || 0), 0) / medias.length)
+          : 0;
         
         finalInfluencer = {
-          id: `instagram-${data.id}`,
-          name: data.name,
+          id: `instagram-${data.id || Date.now()}`,
+          name: data.name || "Instagram Creator",
           platforms: ["Instagram"],
-          followers: data.followers,
-          followersByPlatform: { Instagram: data.followers },
+          followers: data.followers || 0,
+          followersByPlatform: { Instagram: data.followers || 0 },
           avgViewsByPlatform: { Instagram: avgViews },
-          engagementRate: Number(((avgViews / data.followers) * 100).toFixed(1)) || 0,
+          engagementRate: data.followers > 0 ? Number(((avgViews / data.followers) * 100).toFixed(1)) : 0,
           category: "Lifestyle Creator",
           performanceScore: 82,
-          ratePerPost: Math.round(data.followers * 0.01) || 300,
+          ratePerPost: Math.round((data.followers || 0) * 0.01) || 300,
           stylePresent: ["Photo", "Lifestyle"],
-          bio: data.contentSummary,
-          profilePicture: data.thumbnail,
-          sampleVideos: data.medias.map((m: any) => ({
-            id: m.shortcode,
-            thumbnail: m.thumbnail,
-            title: m.title,
-            viewCount: m.viewCount
+          bio: data.contentSummary || data.bio || "",
+          profilePicture: data.thumbnail || "",
+          sampleVideos: medias.map((m: any) => ({
+            id: m.shortcode || m.id || String(Math.random()),
+            thumbnail: m.thumbnail || "",
+            title: m.title || "",
+            viewCount: m.viewCount || 0
           }))
         };
 

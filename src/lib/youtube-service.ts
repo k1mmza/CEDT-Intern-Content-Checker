@@ -1,6 +1,13 @@
 const API_KEY = process.env.YOUTUBE_API_KEY;
 const BASE_URL = "https://www.googleapis.com/youtube/v3";
 
+function checkApiKey() {
+  if (!API_KEY || API_KEY === 'your_youtube_api_key_here') {
+    throw new Error('YouTube API Key is not configured. Please add it to .env.local');
+  }
+}
+
+
 export interface YouTubeChannelData {
   id: string;
   title: string;
@@ -30,6 +37,7 @@ export interface YouTubeVideoData {
 
 export async function getChannelIdFromUrl(url: string): Promise<string | null> {
   try {
+    checkApiKey();
     const parsed = new URL(url);
     const hostname = parsed.hostname.replace("www.", "");
     const pathname = parsed.pathname;
@@ -74,6 +82,7 @@ export async function getChannelIdFromUrl(url: string): Promise<string | null> {
 
 export async function getChannelData(channelId: string): Promise<YouTubeChannelData | null> {
   try {
+    checkApiKey();
     const res = await fetch(`${BASE_URL}/channels?part=snippet,statistics&id=${channelId}&key=${API_KEY}`);
     const data = await res.json();
     if (!data.items?.length) return null;
@@ -97,6 +106,7 @@ export async function getChannelData(channelId: string): Promise<YouTubeChannelD
 
 export async function getLatestVideosStats(channelId: string, limit = 30): Promise<{ avgViews: number; tags: string[]; videos: YouTubeVideoData[]; contentSummary: string }> {
   try {
+    checkApiKey();
     const searchRes = await fetch(
       `${BASE_URL}/search?part=id,snippet&channelId=${channelId}&maxResults=${limit}&order=date&type=video&key=${API_KEY}`
     );

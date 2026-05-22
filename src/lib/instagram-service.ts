@@ -26,19 +26,26 @@ export interface InstagramMediaData {
 }
 
 async function fetchFromRapidAPI(endpoint: string, params: Record<string, string>) {
+  if (!API_KEY || API_KEY === 'your_rapidapi_key_here') {
+    throw new Error('RapidAPI Key is not configured. Please add it to .env.local');
+  }
+
   const url = new URL(`https://${API_HOST}${endpoint}`);
   Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+
+  console.log(`Calling RapidAPI: ${url.toString()}`);
 
   const response = await fetch(url.toString(), {
     method: 'GET',
     headers: {
-      'x-rapidapi-key': API_KEY || '',
-      'x-rapidapi-host': API_HOST || ''
+      'x-rapidapi-key': API_KEY,
+      'x-rapidapi-host': API_HOST || 'instagram-looter.p.rapidapi.com'
     }
   });
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(`RapidAPI Error Response: ${errorText}`);
     throw new Error(`RapidAPI Error (${response.status}): ${errorText}`);
   }
 
