@@ -75,7 +75,7 @@ export function extractInstagramUsername(url: string): string | null {
 
 export async function getInstagramProfile(username: string): Promise<InstagramProfileData | null> {
   try {
-    const data = await fetchFromRapidAPI('/v1/user/info', { username });
+    const data = await fetchFromRapidAPI('/profile', { username });
     console.log("Instagram API Response (Profile):", JSON.stringify(data).slice(0, 500));
     
     const user = data.data || data.result || (data.username ? data : null);
@@ -91,9 +91,9 @@ export async function getInstagramProfile(username: string): Promise<InstagramPr
       full_name: user.full_name || user.username,
       biography: user.biography || "",
       profile_pic_url: user.profile_pic_url_hd || user.profile_pic_url || "",
-      follower_count: user.follower_count || 0,
-      following_count: user.following_count || 0,
-      media_count: user.media_count || 0,
+      follower_count: user.follower_count || user.edge_followed_by?.count || 0,
+      following_count: user.following_count || user.edge_follow?.count || 0,
+      media_count: user.media_count || user.edge_owner_to_timeline_media?.count || 0,
       is_private: !!user.is_private,
       is_verified: !!user.is_verified
     };
@@ -105,10 +105,10 @@ export async function getInstagramProfile(username: string): Promise<InstagramPr
 
 export async function getInstagramMedias(username: string): Promise<InstagramMediaData[]> {
   try {
-    const data = await fetchFromRapidAPI('/v1/user/medias', { username });
+    const data = await fetchFromRapidAPI('/media', { username });
     console.log("Instagram API Response (Medias):", JSON.stringify(data).slice(0, 500));
     
-    const items = data.data?.items || data.result?.items || data.items || [];
+    const items = data.data?.items || data.result?.items || data.items || data.edge_owner_to_timeline_media?.edges?.map((e: any) => e.node) || [];
     
     if (!Array.isArray(items)) {
       console.warn("Instagram API returned non-array media items.");
@@ -117,13 +117,13 @@ export async function getInstagramMedias(username: string): Promise<InstagramMed
     
     return items.map((item: any) => ({
       id: String(item.id || item.pk || ""),
-      shortcode: item.code || "",
-      display_url: item.image_versions2?.candidates?.[0]?.url || item.thumbnail_url || "",
-      video_url: item.video_versions?.[0]?.url,
-      is_video: item.media_type === 2,
-      caption: item.caption?.text || "",
-      like_count: item.like_count || 0,
-      comment_count: item.comment_count || 0
+      shortcode: item.code || item.shortcode || "",
+      display_url: item.image_versions2?.candidates?.[0]?.url || item.display_url || item.thumbnail_src || "",
+      video_url: item.video_url || item.video_versions?.[0]?.url,
+      is_video: !!(item.is_video || item.media_type === 2),
+      caption: item.caption?.text || item.edge_media_to_caption?.edges?.[0]?.node?.text || "",
+      like_count: item.like_count || item.edge_liked_by?.count || item.edge_media_preview_like?.count || 0,
+      comment_count: item.comment_count || item.edge_media_to_comment?.count || 0
     }));
   } catch (error) {
     console.error("Error fetching Instagram medias:", error);
