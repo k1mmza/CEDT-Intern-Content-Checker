@@ -1,6 +1,7 @@
 "use server";
 
-import { getInstagramProfile, getInstagramMedias, extractInstagramUsername, summarizeInstagramContent, inferAudienceData } from "@/lib/instagram-service";
+import { getInstagramProfile, getInstagramMedias, extractInstagramUsername, inferAudienceData } from "@/lib/instagram-service";
+import { analyzeCreatorContent } from "@/lib/ai-service";
 
 export async function fetchInstagramInfluencer(url: string) {
   try {
@@ -15,10 +16,23 @@ export async function fetchInstagramInfluencer(url: string) {
     }
 
     // Prioritize initial_media from profile response, otherwise fetch separately
-    const medias = profile.initial_media || [];
+    let medias = profile.initial_media || [];
+    let captions: string[] = medias.map(m => m.caption).filter(Boolean);
+
+    if (medias.length === 0) {
+      const result = await getInstagramMedias(username, profile.id);
+      medias = result.items;
+      captions = result.captions;
+    }
     
-    const { summary, tags } = summarizeInstagramContent(profile, medias);
-    const audience = inferAudienceData(profile, summary);
+    const aiAnalysis = await analyzeCreatorContent(
+      profile.full_name || profile.username,
+      profile.biography,
+      captions,
+      "Instagram"
+    );
+
+    const audience = inferAudienceData(profile, aiAnalysis.summary);
 
     return {
       success: true,
@@ -28,8 +42,8 @@ export async function fetchInstagramInfluencer(url: string) {
         username: profile.username,
         followers: profile.follower_count,
         bio: profile.biography,
-        contentSummary: summary,
-        tags: tags,
+        contentSummary: aiAnalysis.summary,
+        tags: aiAnalysis.tags,
         audience: audience,
         thumbnail: profile.profile_pic_url,
         medias: medias.slice(0, 6).map(m => ({

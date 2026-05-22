@@ -136,8 +136,8 @@ export async function getInstagramProfile(username: string): Promise<InstagramPr
   }
 }
 
-export async function getInstagramMedias(username: string, userId?: string): Promise<InstagramMediaData[]> {
-  const endpoints = [
+export async function getInstagramMedias(username: string, userId?: string): Promise<{ items: InstagramMediaData[]; captions: string[] }> {
+  const endpoints: { url: string; params: Record<string, string> }[] = [
     { url: '/v1/posts', params: { username } },
     { url: '/user/posts', params: { username } },
     { url: '/profile', params: { username } },
@@ -149,20 +149,17 @@ export async function getInstagramMedias(username: string, userId?: string): Pro
     endpoints.push({ url: '/user/posts', params: { id: userId } });
   }
 
-  let data = null;
-
   for (const endpoint of endpoints) {
     try {
       console.log(`Trying Instagram media endpoint: ${endpoint.url} with params:`, endpoint.params);
-      data = await fetchFromRapidAPI(endpoint.url, endpoint.params as any);
+      const data = await fetchFromRapidAPI(endpoint.url, endpoint.params as any);
       
       const user = data.data || data.result || (data.username ? data : null);
-      const items = (user && (user.edge_owner_to_timeline_media?.edges?.map((e: any) => e.node) || user.items || user.medias)) 
+      const rawItems = (user && (user.edge_owner_to_timeline_media?.edges?.map((e: any) => e.node) || user.items || user.medias)) 
         || data.data?.items || data.result?.items || data.items || [];
 
-      if (items.length > 0) {
-        console.log(`Successfully found ${items.length} media items at ${endpoint.url}`);
-        return items.map((item: any) => ({
+      if (rawItems.length > 0) {
+        const items = rawItems.map((item: any) => ({
           id: String(item.id || item.pk || ""),
           shortcode: item.code || item.shortcode || "",
           display_url: proxyImage(item.image_versions2?.candidates?.[0]?.url || item.display_url || item.thumbnail_src || item.thumbnail_url || ""),
@@ -172,51 +169,20 @@ export async function getInstagramMedias(username: string, userId?: string): Pro
           like_count: item.like_count || item.edge_liked_by?.count || item.edge_media_preview_like?.count || 0,
           comment_count: item.comment_count || item.edge_media_to_comment?.count || 0
         }));
+        
+        return {
+          items,
+          captions: items.map((m: any) => m.caption).filter(Boolean)
+        };
       }
     } catch (e) {
       // Silently fail retries
     }
   }
 
-  return [];
+  return { items: [], captions: [] };
 }
 
-export function summarizeInstagramContent(profile: InstagramProfileData, medias: InstagramMediaData[]): { summary: string; tags: string[] } {
-  const bio = (profile.biography || "").toLowerCase();
-  const captions = medias.map(m => (m.caption || "").toLowerCase()).join(" ");
-  const fullText = `${bio} ${captions}`;
-  const name = (profile.full_name || profile.username || "").toLowerCase();
-  
-  // Extract hashtags from captions
-  const hashtags = Array.from(fullText.matchAll(/#(\w+)/g)).map(match => match[1]).filter(Boolean);
-  const uniqueTags = Array.from(new Set(hashtags)).slice(0, 10);
-
-  let summary = "Digital content creator sharing insights and experiences.";
-  
-  const matches = (keywords: string[]) => keywords.some(k => fullText.includes(k) || name.includes(k));
-
-  if (matches(["esports", "gaming", "gamer", "streamer", "gameplay", "walkthrough", "twitch"])) {
-    summary = "Focuses on competitive gaming and esports, sharing gameplay highlights and tournament updates.";
-  } else if (matches(["fashion", "outfit", "style", "lookbook", "ootd", "wardrobe"])) {
-    summary = "Primarily focused on fashion, style inspiration, and trendy outfit showcases.";
-  } else if (matches(["travel", "explore", "adventure", "wanderlust", "destination", "trip"])) {
-    summary = "Content creator documenting global travel adventures and destination guides.";
-  } else if (matches(["food", "cooking", "recipe", "chef", "dining", "restaurant", "eat"])) {
-    summary = "Food enthusiast sharing culinary experiences, unique recipes, and restaurant reviews.";
-  } else if (matches(["fitness", "gym", "workout", "training", "health", "wellness", "athlete"])) {
-    summary = "Fitness influencer providing workout motivation, training tips, and health-related content.";
-  } else if (matches(["beauty", "makeup", "skincare", "cosmetics", "tutorial", "glam"])) {
-    summary = "Beauty expert specializing in creative makeup tutorials and effective skincare routines.";
-  } else if (matches(["tech", "gadget", "software", "developer", "hardware", "review", "digital"])) {
-    summary = "Tech enthusiast reviewing the latest digital gadgets and exploring technological trends.";
-  } else if (matches(["lifestyle", "vlog", "daily", "journal", "personal"])) {
-    summary = "Lifestyle creator sharing personal stories, daily moments, and life experiences.";
-  } else if (matches(["music", "song", "artist", "musician", "performance", "concert"])) {
-    summary = "Primarily producing musical content, including original tracks and live performances.";
-  }
-  
-  return { summary, tags: uniqueTags.length > 0 ? uniqueTags : ["instagram", "creator", "social"] };
-}
 
 export interface AudienceInference {
   gender: string;

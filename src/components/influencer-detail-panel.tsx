@@ -54,11 +54,24 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
   const mainFollowers = getMainFollowerPlatform(influencer);
   const topByViews = getTopAvgViewsPlatform(influencer);
   
-  // Use real YouTube video if available, otherwise fallback to mock embed
+  // Use real YouTube/Instagram media if available, otherwise fallback to mock embed
   const hasRealYoutubeVideo = topByViews.platform === "YouTube" && influencer.sampleVideos && influencer.sampleVideos.length > 0;
-  const showcaseEmbed = hasRealYoutubeVideo 
-    ? { kind: "iframe" as const, title: influencer.sampleVideos![0].title, src: `https://www.youtube.com/embed/${influencer.sampleVideos![0].id}` }
-    : getShowcaseDemoEmbed(topByViews.platform, influencer.id);
+  const hasRealInstagramMedia = topByViews.platform === "Instagram" && influencer.sampleVideos && influencer.sampleVideos.length > 0;
+
+  let showcaseEmbed: any;
+  if (hasRealYoutubeVideo) {
+    showcaseEmbed = { kind: "iframe" as const, title: influencer.sampleVideos![0].title, src: `https://www.youtube.com/embed/${influencer.sampleVideos![0].id}` };
+  } else if (hasRealInstagramMedia) {
+    showcaseEmbed = { 
+      kind: "external" as const, 
+      href: `https://www.instagram.com/p/${influencer.sampleVideos![0].id}/`, 
+      label: "View Post on Instagram", 
+      title: influencer.sampleVideos![0].title,
+      thumbnail: influencer.sampleVideos![0].thumbnail
+    };
+  } else {
+    showcaseEmbed = getShowcaseDemoEmbed(topByViews.platform, influencer.id);
+  }
 
   const headlineAvgViews = topByViews.avgViews > 0 ? topByViews.avgViews : meta.averageViews;
 
@@ -68,7 +81,12 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
         <header className="sticky top-0 z-10 border-b border-slate-100 bg-white/95 p-4 backdrop-blur">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <img src={avatarUrl} alt={`${influencer.name} profile`} className="h-12 w-12 rounded-full border border-slate-200 object-cover" />
+              <img 
+                src={avatarUrl} 
+                alt={`${influencer.name} profile`} 
+                className="h-12 w-12 rounded-full border border-slate-200 object-cover" 
+                referrerPolicy="no-referrer"
+              />
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-600">Creator media kit</p>
                 <p className="text-lg font-semibold text-slate-900">{influencer.name}</p>
@@ -95,7 +113,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
               <span className="text-xs text-slate-600">~{headlineAvgViews.toLocaleString()} avg views on this platform</span>
             </div>
             <p className="mt-1 text-[11px] text-slate-500">
-              {hasRealYoutubeVideo ? "Latest video from this creator." : "Demo sample video for this platform — not this creator’s real post."}
+              {hasRealYoutubeVideo || hasRealInstagramMedia ? "Latest content from this creator." : "Demo sample video for this platform — not this creator’s real post."}
             </p>
             {showcaseEmbed.kind === "iframe" ? (
               <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-black shadow-inner">
@@ -108,6 +126,27 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
                     allowFullScreen
                   />
                 </div>
+              </div>
+            ) : showcaseEmbed.thumbnail ? (
+              <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                 <div className="relative aspect-square w-full sm:aspect-video">
+                    <img 
+                      src={showcaseEmbed.thumbnail} 
+                      alt={showcaseEmbed.title} 
+                      className="h-full w-full object-cover" 
+                      referrerPolicy="no-referrer"
+                    />
+                    <a
+                      href={showcaseEmbed.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition hover:opacity-100"
+                    >
+                      <span className="rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-lg backdrop-blur">
+                        View on Instagram
+                      </span>
+                    </a>
+                 </div>
               </div>
             ) : (
               <a
@@ -197,7 +236,12 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
                 influencer.sampleVideos.slice(0, 3).map((video) => (
                   <div key={video.id} className="group relative flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-1.5 transition hover:bg-white">
                     <div className="relative mb-2 aspect-video overflow-hidden rounded bg-slate-200">
-                      <img src={video.thumbnail} alt={video.title} className="h-full w-full object-cover transition duration-300 group-hover:scale-110" />
+                      <img 
+                        src={video.thumbnail} 
+                        alt={video.title} 
+                        className="h-full w-full object-cover transition duration-300 group-hover:scale-110" 
+                        referrerPolicy="no-referrer"
+                      />
                     </div>
                     <p className="line-clamp-2 min-h-[32px] text-[10px] font-medium text-slate-800">{video.title}</p>
                     <p className="mt-1 text-[10px] text-slate-500">{video.viewCount.toLocaleString()} views</p>

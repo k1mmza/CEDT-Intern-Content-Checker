@@ -71,7 +71,12 @@ export function InfluencerCard({ influencer, isActive = false, onSelect }: Influ
       } ${onSelect ? "cursor-pointer" : ""}`}
     >
       <div className="relative border-b border-slate-100">
-        <img src={avatarUrl} alt={`${influencer.name} profile`} className="h-60 w-full object-cover" />
+        <img 
+          src={avatarUrl} 
+          alt={`${influencer.name} profile`} 
+          className="h-60 w-full object-cover" 
+          referrerPolicy="no-referrer"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/20 to-transparent" />
         <span className="absolute right-4 top-4 z-10 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-indigo-700 shadow-sm backdrop-blur-sm">
           Score {influencer.performanceScore}

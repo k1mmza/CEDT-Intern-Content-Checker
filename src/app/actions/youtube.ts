@@ -1,6 +1,7 @@
 "use server";
 
 import { getChannelIdFromUrl, getChannelData, getLatestVideosStats } from "@/lib/youtube-service";
+import { analyzeCreatorContent } from "@/lib/ai-service";
 
 export async function fetchYouTubeInfluencer(url: string) {
   try {
@@ -15,6 +16,12 @@ export async function fetchYouTubeInfluencer(url: string) {
     }
 
     const stats = await getLatestVideosStats(channelId);
+    const aiAnalysis = await analyzeCreatorContent(
+      channel.title,
+      channel.description,
+      stats.descriptions,
+      "YouTube"
+    );
 
     return {
       success: true,
@@ -23,13 +30,13 @@ export async function fetchYouTubeInfluencer(url: string) {
         name: channel.title,
         followers: parseInt(channel.statistics.subscriberCount || "0", 10),
         avgViews: stats.avgViews,
-        tags: stats.tags,
+        tags: aiAnalysis.tags.length > 0 ? aiAnalysis.tags : stats.tags,
         thumbnail: channel.thumbnails.high.url || channel.thumbnails.medium.url || channel.thumbnails.default.url,
         description: channel.description,
         customUrl: channel.customUrl,
         country: channel.country,
         videos: stats.videos,
-        contentSummary: stats.contentSummary
+        contentSummary: aiAnalysis.summary
       }
     };
   } catch (error) {

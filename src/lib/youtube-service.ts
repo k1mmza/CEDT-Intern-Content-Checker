@@ -104,7 +104,7 @@ export async function getChannelData(channelId: string): Promise<YouTubeChannelD
   }
 }
 
-export async function getLatestVideosStats(channelId: string, limit = 30): Promise<{ avgViews: number; tags: string[]; videos: YouTubeVideoData[]; contentSummary: string }> {
+export async function getLatestVideosStats(channelId: string, limit = 30): Promise<{ avgViews: number; tags: string[]; videos: YouTubeVideoData[]; descriptions: string[] }> {
   try {
     checkApiKey();
     const searchRes = await fetch(
@@ -112,7 +112,7 @@ export async function getLatestVideosStats(channelId: string, limit = 30): Promi
     );
     const searchData = await searchRes.json();
     
-    if (!searchData.items?.length) return { avgViews: 0, tags: [], videos: [], contentSummary: "" };
+    if (!searchData.items?.length) return { avgViews: 0, tags: [], videos: [], descriptions: [] };
 
     const videoIds = searchData.items.map((item: any) => item.id.videoId).filter(Boolean);
 
@@ -124,7 +124,7 @@ export async function getLatestVideosStats(channelId: string, limit = 30): Promi
     let totalViews = 0;
     const allTags = new Set<string>();
     const videos: YouTubeVideoData[] = [];
-    const allText: string[] = [];
+    const descriptions: string[] = [];
 
     videosData.items?.forEach((video: any) => {
       const views = parseInt(video.statistics.viewCount || "0", 10);
@@ -137,44 +137,21 @@ export async function getLatestVideosStats(channelId: string, limit = 30): Promi
         thumbnail: video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url || video.snippet.thumbnails.default?.url
       });
 
-      allText.push(video.snippet.title);
-      allText.push(video.snippet.description);
+      descriptions.push(`${video.snippet.title}: ${video.snippet.description.slice(0, 300)}`);
 
       if (video.snippet.tags) {
         video.snippet.tags.forEach((tag: string) => allTags.add(tag.toLowerCase()));
       }
     });
 
-    // Simple heuristic-based summarizer
-    const fullText = allText.join(" ").toLowerCase();
-    let contentSummary = "Content creator focusing on digital media.";
-    
-    if (fullText.includes("music video") || fullText.includes("official audio") || fullText.includes("song")) {
-      contentSummary = "Primarily producing music videos, original tracks, and musical performances.";
-    } else if (fullText.includes("gaming") || fullText.includes("gameplay") || fullText.includes("walkthrough")) {
-      contentSummary = "Focuses on gaming content, including gameplay walkthroughs, reviews, and live streams.";
-    } else if (fullText.includes("review") || fullText.includes("unboxing") || fullText.includes("tech")) {
-      contentSummary = "Specializes in product reviews, unboxings, and technical deep-dives.";
-    } else if (fullText.includes("vlog") || fullText.includes("daily life") || fullText.includes("lifestyle")) {
-      contentSummary = "Creates lifestyle vlogs, sharing daily experiences and personal stories.";
-    } else if (fullText.includes("tutorial") || fullText.includes("how to") || fullText.includes("education")) {
-      contentSummary = "Educational creator providing tutorials, guides, and informative content.";
-    } else if (fullText.includes("travel") || fullText.includes("adventure") || fullText.includes("explore")) {
-      contentSummary = "Travel enthusiast documenting adventures, destination guides, and global explorations.";
-    } else if (fullText.includes("beauty") || fullText.includes("makeup") || fullText.includes("skincare")) {
-      contentSummary = "Beauty and skincare expert sharing makeup tutorials and product recommendations.";
-    } else if (fullText.includes("cooking") || fullText.includes("recipe") || fullText.includes("food")) {
-      contentSummary = "Food-focused creator sharing recipes, cooking techniques, and culinary experiences.";
-    }
-
     return {
       avgViews: Math.round(totalViews / videoIds.length),
-      tags: Array.from(allTags).slice(0, 20),
+      tags: Array.from(allTags).slice(0, 10),
       videos: videos.slice(0, 6),
-      contentSummary
+      descriptions
     };
   } catch (error) {
     console.error("Error fetching YouTube videos stats:", error);
-    return { avgViews: 0, tags: [], videos: [], contentSummary: "" };
+    return { avgViews: 0, tags: [], videos: [], descriptions: [] };
   }
 }
