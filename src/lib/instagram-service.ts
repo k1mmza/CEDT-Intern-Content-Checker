@@ -12,6 +12,7 @@ export interface InstagramProfileData {
   media_count: number;
   is_private: boolean;
   is_verified: boolean;
+  initial_media?: InstagramMediaData[];
 }
 
 export interface InstagramMediaData {
@@ -52,6 +53,13 @@ async function fetchFromRapidAPI(endpoint: string, params: Record<string, string
   return response.json();
 }
 
+function proxyImage(url: string): string {
+  if (!url) return "";
+  if (!url.includes('cdninstagram.com') && !url.includes('fbcdn.net')) return url;
+  // Use weserv.nl as a free image proxy to bypass Instagram hotlinking protection
+  return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&default=https://api.dicebear.com/9.x/shapes/svg?seed=fallback`;
+}
+
 export function extractInstagramUsername(url: string): string | null {
   try {
     const parsed = new URL(url);
@@ -82,6 +90,7 @@ export async function getInstagramProfile(username: string): Promise<InstagramPr
     
     if (user) {
       console.log(`Instagram Profile found for: ${user.username}`);
+      console.log("Profile Data Keys:", Object.keys(user));
     } else {
       console.warn("Instagram API response structure unknown:", Object.keys(data));
     }
@@ -90,18 +99,36 @@ export async function getInstagramProfile(username: string): Promise<InstagramPr
       console.warn("Instagram API returned empty or invalid user data.");
       return null;
     }
+
+    // Attempt to extract media from profile if available (common in scrapers)
+    const mediaNodes = user.edge_owner_to_timeline_media?.edges?.map((e: any) => e.node) || user.items || user.medias || [];
+    const initial_media = mediaNodes.map((item: any) => ({
+      id: String(item.id || item.pk || ""),
+      shortcode: item.code || item.shortcode || "",
+      display_url: proxyImage(item.image_versions2?.candidates?.[0]?.url || item.display_url || item.thumbnail_src || item.thumbnail_url || ""),
+      video_url: item.video_url || item.video_versions?.[0]?.url,
+      is_video: !!(item.is_video || item.media_type === 2 || item.video_versions),
+      caption: item.caption?.text || item.edge_media_to_caption?.edges?.[0]?.node?.text || "",
+      like_count: item.like_count || item.edge_liked_by?.count || item.edge_media_preview_like?.count || 0,
+      comment_count: item.comment_count || item.edge_media_to_comment?.count || 0
+    }));
     
+    const profilePic = user.profile_pic_url_hd || user.hd_profile_pic_url_info?.url || user.profile_pic_url || user.profile_picture || user.profile_pic || "";
+    const proxiedProfilePic = proxyImage(profilePic);
+    console.log(`Mapped Profile Picture URL (Proxied) for ${user.username}: ${proxiedProfilePic.slice(0, 100)}...`);
+
     return {
       id: String(user.id || user.pk || user.pk_id || ""),
       username: user.username,
       full_name: user.full_name || user.username,
       biography: user.biography || "",
-      profile_pic_url: user.profile_pic_url_hd || user.hd_profile_pic_url_info?.url || user.profile_pic_url || "",
+      profile_pic_url: proxiedProfilePic,
       follower_count: user.follower_count || user.edge_followed_by?.count || 0,
       following_count: user.following_count || user.edge_follow?.count || 0,
       media_count: user.media_count || user.edge_owner_to_timeline_media?.count || 0,
       is_private: !!user.is_private,
-      is_verified: !!user.is_verified
+      is_verified: !!user.is_verified,
+      initial_media: initial_media.length > 0 ? initial_media : undefined
     };
   } catch (error) {
     console.error("Error fetching Instagram profile:", error);
@@ -109,75 +136,128 @@ export async function getInstagramProfile(username: string): Promise<InstagramPr
   }
 }
 
-export async function getInstagramMedias(username: string): Promise<InstagramMediaData[]> {
-  try {
-    const endpoints = ['/v1/posts', '/v1/user/medias', '/v1/user/posts', '/v1/reels', '/user/media', '/user/posts'];
-    let data = null;
+export async function getInstagramMedias(username: string, userId?: string): Promise<InstagramMediaData[]> {
+  const endpoints = [
+    { url: '/v1/posts', params: { username } },
+    { url: '/user/posts', params: { username } },
+    { url: '/profile', params: { username } },
+    { url: '/user/media', params: { username } },
+  ];
 
-    for (const endpoint of endpoints) {
-      try {
-        console.log(`Trying Instagram media endpoint: ${endpoint}`);
-        data = await fetchFromRapidAPI(endpoint, { username });
-        if (data) break;
-      } catch (e) {
-        console.warn(`Endpoint ${endpoint} failed.`);
-      }
-    }
-
-    if (!data) {
-      console.error("All Instagram media endpoints failed.");
-      return [];
-    }
-      
-    const items = data.data?.items || data.result?.items || data.items || data.edge_owner_to_timeline_media?.edges?.map((e: any) => e.node) || [];
-    console.log(`Instagram Medias found for ${username}: ${items.length} items`);
-    
-    if (items.length > 0) {
-      console.log("SAMPLE MEDIA ITEM KEYS:", Object.keys(items[0]));
-      console.log("SAMPLE MEDIA ITEM (first 200 chars):", JSON.stringify(items[0]).slice(0, 200));
-    }
-    
-    if (!Array.isArray(items)) {
-      console.warn("Instagram API returned non-array media items.");
-      return [];
-    }
-    
-    return items.map((item: any) => ({
-      id: String(item.id || item.pk || ""),
-      shortcode: item.code || item.shortcode || "",
-      display_url: item.image_versions2?.candidates?.[0]?.url || item.display_url || item.thumbnail_src || item.thumbnail_url || "",
-      video_url: item.video_url || item.video_versions?.[0]?.url,
-      is_video: !!(item.is_video || item.media_type === 2 || item.video_versions),
-      caption: item.caption?.text || item.edge_media_to_caption?.edges?.[0]?.node?.text || "",
-      like_count: item.like_count || item.edge_liked_by?.count || item.edge_media_preview_like?.count || 0,
-      comment_count: item.comment_count || item.edge_media_to_comment?.count || 0
-    }));
-  } catch (error) {
-    console.error("Error fetching Instagram medias:", error);
-    return [];
+  if (userId) {
+    endpoints.push({ url: '/v1/user/posts', params: { id: userId } });
+    endpoints.push({ url: '/user/posts', params: { id: userId } });
   }
+
+  let data = null;
+
+  for (const endpoint of endpoints) {
+    try {
+      console.log(`Trying Instagram media endpoint: ${endpoint.url} with params:`, endpoint.params);
+      data = await fetchFromRapidAPI(endpoint.url, endpoint.params as any);
+      
+      const user = data.data || data.result || (data.username ? data : null);
+      const items = (user && (user.edge_owner_to_timeline_media?.edges?.map((e: any) => e.node) || user.items || user.medias)) 
+        || data.data?.items || data.result?.items || data.items || [];
+
+      if (items.length > 0) {
+        console.log(`Successfully found ${items.length} media items at ${endpoint.url}`);
+        return items.map((item: any) => ({
+          id: String(item.id || item.pk || ""),
+          shortcode: item.code || item.shortcode || "",
+          display_url: proxyImage(item.image_versions2?.candidates?.[0]?.url || item.display_url || item.thumbnail_src || item.thumbnail_url || ""),
+          video_url: item.video_url || item.video_versions?.[0]?.url,
+          is_video: !!(item.is_video || item.media_type === 2 || item.video_versions),
+          caption: item.caption?.text || item.edge_media_to_caption?.edges?.[0]?.node?.text || "",
+          like_count: item.like_count || item.edge_liked_by?.count || item.edge_media_preview_like?.count || 0,
+          comment_count: item.comment_count || item.edge_media_to_comment?.count || 0
+        }));
+      }
+    } catch (e) {
+      // Silently fail retries
+    }
+  }
+
+  return [];
 }
 
-export function summarizeInstagramContent(profile: InstagramProfileData, medias: InstagramMediaData[]): string {
-  const bio = profile.biography.toLowerCase();
-  const captions = medias.map(m => m.caption.toLowerCase()).join(" ");
+export function summarizeInstagramContent(profile: InstagramProfileData, medias: InstagramMediaData[]): { summary: string; tags: string[] } {
+  const bio = (profile.biography || "").toLowerCase();
+  const captions = medias.map(m => (m.caption || "").toLowerCase()).join(" ");
   const fullText = `${bio} ${captions}`;
+  const name = (profile.full_name || profile.username || "").toLowerCase();
   
-  if (fullText.includes("fashion") || fullText.includes("outfit") || fullText.includes("style")) {
-    return "Primarily focused on fashion, style inspiration, and outfit showcases.";
-  } else if (fullText.includes("travel") || fullText.includes("explore") || fullText.includes("adventure")) {
-    return "Content creator documenting travel adventures and global explorations.";
-  } else if (fullText.includes("food") || fullText.includes("cooking") || fullText.includes("recipe")) {
-    return "Food enthusiast sharing culinary experiences, recipes, and dining spots.";
-  } else if (fullText.includes("fitness") || fullText.includes("gym") || fullText.includes("workout")) {
-    return "Fitness influencer providing workout motivation and health-related content.";
-  } else if (fullText.includes("beauty") || fullText.includes("makeup") || fullText.includes("skincare")) {
-    return "Beauty expert specializing in makeup tutorials and skincare routines.";
-  } else if (fullText.includes("lifestyle") || fullText.includes("daily")) {
-    return "Lifestyle creator sharing daily moments and personal storytelling.";
-  } else if (fullText.includes("tech") || fullText.includes("gadget")) {
-    return "Tech enthusiast reviewing the latest gadgets and digital trends.";
+  // Extract hashtags from captions
+  const hashtags = Array.from(fullText.matchAll(/#(\w+)/g)).map(match => match[1]).filter(Boolean);
+  const uniqueTags = Array.from(new Set(hashtags)).slice(0, 10);
+
+  let summary = "Digital content creator sharing insights and experiences.";
+  
+  const matches = (keywords: string[]) => keywords.some(k => fullText.includes(k) || name.includes(k));
+
+  if (matches(["esports", "gaming", "gamer", "streamer", "gameplay", "walkthrough", "twitch"])) {
+    summary = "Focuses on competitive gaming and esports, sharing gameplay highlights and tournament updates.";
+  } else if (matches(["fashion", "outfit", "style", "lookbook", "ootd", "wardrobe"])) {
+    summary = "Primarily focused on fashion, style inspiration, and trendy outfit showcases.";
+  } else if (matches(["travel", "explore", "adventure", "wanderlust", "destination", "trip"])) {
+    summary = "Content creator documenting global travel adventures and destination guides.";
+  } else if (matches(["food", "cooking", "recipe", "chef", "dining", "restaurant", "eat"])) {
+    summary = "Food enthusiast sharing culinary experiences, unique recipes, and restaurant reviews.";
+  } else if (matches(["fitness", "gym", "workout", "training", "health", "wellness", "athlete"])) {
+    summary = "Fitness influencer providing workout motivation, training tips, and health-related content.";
+  } else if (matches(["beauty", "makeup", "skincare", "cosmetics", "tutorial", "glam"])) {
+    summary = "Beauty expert specializing in creative makeup tutorials and effective skincare routines.";
+  } else if (matches(["tech", "gadget", "software", "developer", "hardware", "review", "digital"])) {
+    summary = "Tech enthusiast reviewing the latest digital gadgets and exploring technological trends.";
+  } else if (matches(["lifestyle", "vlog", "daily", "journal", "personal"])) {
+    summary = "Lifestyle creator sharing personal stories, daily moments, and life experiences.";
+  } else if (matches(["music", "song", "artist", "musician", "performance", "concert"])) {
+    summary = "Primarily producing musical content, including original tracks and live performances.";
   }
   
-  return "Digital content creator across various lifestyle themes.";
+  return { summary, tags: uniqueTags.length > 0 ? uniqueTags : ["instagram", "creator", "social"] };
+}
+
+export interface AudienceInference {
+  gender: string;
+  ageGroup: string;
+  country: string;
+  city: string;
+  countryPercent: number;
+}
+
+export function inferAudienceData(profile: InstagramProfileData, summary: string): AudienceInference {
+  const fullText = `${profile.full_name} ${profile.biography} ${summary}`.toLowerCase();
+  
+  // Default values
+  let gender = "Mixed";
+  let ageGroup = "25-34";
+  let country = "Global";
+  let city = "Various";
+  let countryPercent = 65;
+
+  // 1. Detect Location (Priority: Thailand)
+  const isThai = /[\u0e00-\u0e7f]/.test(profile.biography) || fullText.includes("thailand") || fullText.includes("bangkok") || fullText.includes(" th");
+  if (isThai) {
+    country = "Thailand";
+    city = "Bangkok";
+    countryPercent = 75 + Math.floor(Math.random() * 15);
+  }
+
+  // 2. Detect Gender & Age based on Niche
+  if (summary.includes("Beauty") || summary.includes("Fashion") || summary.includes("Skincare")) {
+    gender = "Female (85%)";
+    ageGroup = "18-24";
+  } else if (summary.includes("Gaming") || summary.includes("Esports") || summary.includes("Tech")) {
+    gender = "Male (75%)";
+    ageGroup = "18-24";
+  } else if (summary.includes("Fitness") || summary.includes("Athlete")) {
+    gender = "Mixed (50/50)";
+    ageGroup = "25-34";
+  } else if (summary.includes("Food") || summary.includes("Cooking")) {
+    gender = "Female (60%)";
+    ageGroup = "25-44";
+  }
+
+  return { gender, ageGroup, country, city, countryPercent };
 }

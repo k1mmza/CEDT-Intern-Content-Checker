@@ -416,16 +416,16 @@ function DiscoverPageContent() {
         };
 
         finalMeta = {
-          country: "Global",
-          city: "Various",
+          country: data.audience?.country || "Global",
+          city: data.audience?.city || "Various",
           extraPlatforms: [],
-          audienceCountryPercent: 65,
+          audienceCountryPercent: data.audience?.countryPercent || 65,
           averageViews: avgViews,
           growthRate: 3.5,
-          keywords: ["instagram", "creator", "lifestyle"],
+          keywords: data.tags || ["instagram", "creator", "lifestyle"],
           intents: ["Awareness", "Engagement"],
-          audienceGender: "Mixed",
-          audienceAgeGroup: "18-24",
+          audienceGender: data.audience?.gender || "Mixed",
+          audienceAgeGroup: data.audience?.ageGroup || "18-24",
           qualityScore: 85,
           responseRate: 75
         };
