@@ -1,5 +1,6 @@
 "use client";
 
+import { fetchInstagramInfluencer } from "@/app/actions/instagram";
 import { fetchYouTubeInfluencer } from "@/app/actions/youtube";
 import { InfluencerCard } from "@/components/influencer-card";
 import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
@@ -377,6 +378,53 @@ function DiscoverPageContent() {
           audienceAgeGroup: "25-34",
           qualityScore: 90,
           responseRate: 80
+        };
+      } else if (platform === "Instagram") {
+        const result = await fetchInstagramInfluencer(input.trim());
+        if (result.error || !result.data) {
+          setUrlSearchError(result.error || "Failed to fetch Instagram data.");
+          setIsSearchingUrl(false);
+          return;
+        }
+
+        const { data } = result;
+        const avgViews = Math.round(data.medias.reduce((acc: number, m: any) => acc + m.viewCount, 0) / (data.medias.length || 1));
+        
+        finalInfluencer = {
+          id: `instagram-${data.id}`,
+          name: data.name,
+          platforms: ["Instagram"],
+          followers: data.followers,
+          followersByPlatform: { Instagram: data.followers },
+          avgViewsByPlatform: { Instagram: avgViews },
+          engagementRate: Number(((avgViews / data.followers) * 100).toFixed(1)) || 0,
+          category: "Lifestyle Creator",
+          performanceScore: 82,
+          ratePerPost: Math.round(data.followers * 0.01) || 300,
+          stylePresent: ["Photo", "Lifestyle"],
+          bio: data.contentSummary,
+          profilePicture: data.thumbnail,
+          sampleVideos: data.medias.map((m: any) => ({
+            id: m.shortcode,
+            thumbnail: m.thumbnail,
+            title: m.title,
+            viewCount: m.viewCount
+          }))
+        };
+
+        finalMeta = {
+          country: "Global",
+          city: "Various",
+          extraPlatforms: [],
+          audienceCountryPercent: 65,
+          averageViews: avgViews,
+          growthRate: 3.5,
+          keywords: ["instagram", "creator", "lifestyle"],
+          intents: ["Awareness", "Engagement"],
+          audienceGender: "Mixed",
+          audienceAgeGroup: "18-24",
+          qualityScore: 85,
+          responseRate: 75
         };
       } else {
         // Fallback to mock for other platforms
