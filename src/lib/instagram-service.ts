@@ -39,7 +39,7 @@ async function fetchFromRapidAPI(endpoint: string, params: Record<string, string
     method: 'GET',
     headers: {
       'x-rapidapi-key': API_KEY,
-      'x-rapidapi-host': API_HOST || 'instagram-looter.p.rapidapi.com'
+      'x-rapidapi-host': API_HOST || 'instagram-looter2.p.rapidapi.com'
     }
   });
 
@@ -76,9 +76,15 @@ export function extractInstagramUsername(url: string): string | null {
 export async function getInstagramProfile(username: string): Promise<InstagramProfileData | null> {
   try {
     const data = await fetchFromRapidAPI('/profile', { username });
-    console.log("Instagram API Response (Profile):", JSON.stringify(data).slice(0, 500));
     
+    // Support various common response structures
     const user = data.data || data.result || (data.username ? data : null);
+    
+    if (user) {
+      console.log(`Instagram Profile found for: ${user.username}`);
+    } else {
+      console.warn("Instagram API response structure unknown:", Object.keys(data));
+    }
     
     if (!user || !user.username) {
       console.warn("Instagram API returned empty or invalid user data.");
@@ -86,11 +92,11 @@ export async function getInstagramProfile(username: string): Promise<InstagramPr
     }
     
     return {
-      id: String(user.id || user.pk || ""),
+      id: String(user.id || user.pk || user.pk_id || ""),
       username: user.username,
       full_name: user.full_name || user.username,
       biography: user.biography || "",
-      profile_pic_url: user.profile_pic_url_hd || user.profile_pic_url || "",
+      profile_pic_url: user.profile_pic_url_hd || user.hd_profile_pic_url_info?.url || user.profile_pic_url || "",
       follower_count: user.follower_count || user.edge_followed_by?.count || 0,
       following_count: user.following_count || user.edge_follow?.count || 0,
       media_count: user.media_count || user.edge_owner_to_timeline_media?.count || 0,
@@ -106,9 +112,9 @@ export async function getInstagramProfile(username: string): Promise<InstagramPr
 export async function getInstagramMedias(username: string): Promise<InstagramMediaData[]> {
   try {
     const data = await fetchFromRapidAPI('/media', { username });
-    console.log("Instagram API Response (Medias):", JSON.stringify(data).slice(0, 500));
     
     const items = data.data?.items || data.result?.items || data.items || data.edge_owner_to_timeline_media?.edges?.map((e: any) => e.node) || [];
+    console.log(`Instagram Medias found for ${username}: ${items.length} items`);
     
     if (!Array.isArray(items)) {
       console.warn("Instagram API returned non-array media items.");
@@ -118,9 +124,9 @@ export async function getInstagramMedias(username: string): Promise<InstagramMed
     return items.map((item: any) => ({
       id: String(item.id || item.pk || ""),
       shortcode: item.code || item.shortcode || "",
-      display_url: item.image_versions2?.candidates?.[0]?.url || item.display_url || item.thumbnail_src || "",
+      display_url: item.image_versions2?.candidates?.[0]?.url || item.display_url || item.thumbnail_src || item.thumbnail_url || "",
       video_url: item.video_url || item.video_versions?.[0]?.url,
-      is_video: !!(item.is_video || item.media_type === 2),
+      is_video: !!(item.is_video || item.media_type === 2 || item.video_versions),
       caption: item.caption?.text || item.edge_media_to_caption?.edges?.[0]?.node?.text || "",
       like_count: item.like_count || item.edge_liked_by?.count || item.edge_media_preview_like?.count || 0,
       comment_count: item.comment_count || item.edge_media_to_comment?.count || 0
