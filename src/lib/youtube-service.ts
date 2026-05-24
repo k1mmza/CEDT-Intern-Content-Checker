@@ -104,6 +104,29 @@ export async function getChannelData(channelId: string): Promise<YouTubeChannelD
   }
 }
 
+interface YouTubeSearchItem {
+  id: {
+    videoId?: string;
+  };
+}
+
+interface YouTubeVideoItem {
+  id: string;
+  statistics: {
+    viewCount?: string;
+  };
+  snippet: {
+    title: string;
+    description: string;
+    tags?: string[];
+    thumbnails: {
+      high?: { url: string };
+      medium?: { url: string };
+      default?: { url: string };
+    };
+  };
+}
+
 export async function getLatestVideosStats(channelId: string, limit = 30): Promise<{ avgViews: number; tags: string[]; videos: YouTubeVideoData[]; descriptions: string[] }> {
   try {
     checkApiKey();
@@ -114,7 +137,7 @@ export async function getLatestVideosStats(channelId: string, limit = 30): Promi
     
     if (!searchData.items?.length) return { avgViews: 0, tags: [], videos: [], descriptions: [] };
 
-    const videoIds = searchData.items.map((item: any) => item.id.videoId).filter(Boolean);
+    const videoIds = (searchData.items as YouTubeSearchItem[]).map((item) => item.id.videoId).filter(Boolean);
 
     const videosRes = await fetch(
       `${BASE_URL}/videos?part=snippet,statistics&id=${videoIds.join(",")}&key=${API_KEY}`
@@ -126,7 +149,7 @@ export async function getLatestVideosStats(channelId: string, limit = 30): Promi
     const videos: YouTubeVideoData[] = [];
     const descriptions: string[] = [];
 
-    videosData.items?.forEach((video: any) => {
+    (videosData.items as YouTubeVideoItem[])?.forEach((video) => {
       const views = parseInt(video.statistics.viewCount || "0", 10);
       totalViews += views;
       
@@ -134,7 +157,7 @@ export async function getLatestVideosStats(channelId: string, limit = 30): Promi
         id: video.id,
         title: video.snippet.title,
         viewCount: views,
-        thumbnail: video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url || video.snippet.thumbnails.default?.url
+        thumbnail: video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url || video.snippet.thumbnails.default?.url || ""
       });
 
       descriptions.push(`${video.snippet.title}: ${video.snippet.description.slice(0, 300)}`);

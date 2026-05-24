@@ -15,7 +15,7 @@ export default function RegisterPage() {
           <div className="max-w-sm">
             <h2 className="text-5xl font-bold leading-tight">Build your creator growth engine.</h2>
             <p className="mt-6 text-lg text-indigo-100">
-              "Launch faster, match smarter, and scale your partnerships with trusted creator insights."
+              &quot;Launch faster, match smarter, and scale your partnerships with trusted creator insights.&quot;
             </p>
             <div className="mt-8 flex items-center gap-3">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/25 text-sm font-semibold">AM</span>

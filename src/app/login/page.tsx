@@ -32,7 +32,7 @@ export default function LoginPage() {
           <div className="max-w-sm">
             <h2 className="text-5xl font-bold leading-tight">Master the pulse of the creator economy.</h2>
             <p className="mt-6 text-lg text-indigo-100">
-              "Precision analytics is no longer a luxury; it&apos;s the engine that drives influence into measurable impact."
+              &quot;Precision analytics is no longer a luxury; it&apos;s the engine that drives influence into measurable impact.&quot;
             </p>
             <div className="mt-8 flex items-center gap-3">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/25 text-sm font-semibold">SC</span>

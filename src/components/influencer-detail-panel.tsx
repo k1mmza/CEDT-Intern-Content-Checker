@@ -58,7 +58,11 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
   const hasRealYoutubeVideo = topByViews.platform === "YouTube" && influencer.sampleVideos && influencer.sampleVideos.length > 0;
   const hasRealInstagramMedia = topByViews.platform === "Instagram" && influencer.sampleVideos && influencer.sampleVideos.length > 0;
 
-  let showcaseEmbed: any;
+  type ShowcaseEmbed = 
+    | { kind: "iframe"; title: string; src: string }
+    | { kind: "external"; href: string; label: string; title: string; thumbnail?: string };
+
+  let showcaseEmbed: ShowcaseEmbed;
   if (hasRealYoutubeVideo) {
     showcaseEmbed = { kind: "iframe" as const, title: influencer.sampleVideos![0].title, src: `https://www.youtube.com/embed/${influencer.sampleVideos![0].id}` };
   } else if (hasRealInstagramMedia) {
@@ -70,7 +74,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
       thumbnail: influencer.sampleVideos![0].thumbnail
     };
   } else {
-    showcaseEmbed = getShowcaseDemoEmbed(topByViews.platform, influencer.id);
+    showcaseEmbed = getShowcaseDemoEmbed(topByViews.platform, influencer.id) as ShowcaseEmbed;
   }
 
   const headlineAvgViews = topByViews.avgViews > 0 ? topByViews.avgViews : meta.averageViews;
@@ -172,7 +176,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
             {influencer.bio && (
               <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50/50 p-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Primary focus</p>
-                <p className="mt-1 text-xs italic text-slate-700">"{influencer.bio}"</p>
+                <p className="mt-1 text-xs italic text-slate-700">&quot;{influencer.bio}&quot;</p>
               </div>
             )}
             <p className="mt-2 text-xs text-slate-600">

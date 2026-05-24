@@ -389,8 +389,17 @@ function DiscoverPageContent() {
 
         const { data } = result;
         const medias = Array.isArray(data.medias) ? data.medias : [];
+        
+        interface MediaItem {
+          viewCount?: number;
+          shortcode?: string;
+          id?: string;
+          thumbnail?: string;
+          title?: string;
+        }
+
         const avgViews = medias.length > 0 
-          ? Math.round(medias.reduce((acc: number, m: any) => acc + (m.viewCount || 0), 0) / medias.length)
+          ? Math.round((medias as MediaItem[]).reduce((acc: number, m: MediaItem) => acc + (m.viewCount || 0), 0) / medias.length)
           : 0;
         
         finalInfluencer = {
@@ -407,7 +416,7 @@ function DiscoverPageContent() {
           stylePresent: ["Photo", "Lifestyle"],
           bio: data.contentSummary || data.bio || "",
           profilePicture: data.thumbnail || "",
-          sampleVideos: medias.map((m: any) => ({
+          sampleVideos: (medias as MediaItem[]).map((m: MediaItem) => ({
             id: m.shortcode || m.id || String(Math.random()),
             thumbnail: m.thumbnail || "",
             title: m.title || "",
